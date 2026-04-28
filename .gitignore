@@ -1,0 +1,11 @@
+# R session files
+.Rhistory
+.RData
+.Ruserdata
+
+# Quarto / knitr generated artifacts
+*_files/
+.quarto/
+
+# Generated results
+report/results/

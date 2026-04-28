@@ -1,0 +1,80 @@
+---
+title: "01 Linear-Truth Cross-Validation Replication"
+author: Aileen Tao
+format:
+  pdf
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(dplyr)
+```
+
+# Goal
+
+This project simulates data under a linear truth and compares two candidate models with one random 10-fold split per Monte Carlo replication:
+
+- Linear model (correct): `y ~ x`
+- Polynomial model: `y ~ poly(x, 3)`
+
+The aim is to show that CV model selection still varies across finite replications.
+
+# Load Results
+
+```{r load-results}
+rds_candidates <- c(
+  "results/01_cv_linear_truth_results.rds",
+  "report/results/01_cv_linear_truth_results.rds",
+  "../report/results/01_cv_linear_truth_results.rds"
+)
+rds_found <- rds_candidates[file.exists(rds_candidates)]
+
+if (length(rds_found) > 0) {
+  output <- readRDS(rds_found[[1]])
+  params <- output$parameters
+  results <- output$results
+  selection_summary <- output$selection_summary
+  gap_summary <- output$gap_summary
+} else {
+  stop(
+    "Missing results file: report/results/01_cv_linear_truth_results.rds. ",
+    "Run code/01_run_cv_linear_truth.R first."
+  )
+}
+```
+
+```{r parameter-check, echo=FALSE}
+knitr::kable(
+  data.frame(
+    setting = c("K", "Monte Carlo replications per sample size", "Sample sizes", "beta0", "beta1", "sigma", "poly_degree"),
+    value = c(params$K, params$mc_runs, paste(params$sample_sizes, collapse = ", "), params$beta0, params$beta1, params$sigma, params$poly_degree)
+  ),
+  caption = "Simulation settings."
+)
+```
+
+# Selection Counts and Rates
+
+```{r selection-summary, echo=FALSE}
+knitr::kable(
+  selection_summary |>
+    arrange(n, selected_model),
+  digits = 4,
+  caption = "How often each model is selected across 1000 replications for each sample size."
+)
+```
+
+# CV Error Summary
+
+```{r gap-summary, echo=FALSE}
+knitr::kable(
+  gap_summary |>
+    arrange(n),
+  digits = 5,
+  caption = "Average CV error and gap summary by sample size (poly3 minus linear)."
+)
+```
+
+# Conclusion
+
+Even when the true model is linear, cross-validation can select either linear or polynomial in finite replications. The selection-count table quantifies this variation for both large-sample datasets (`n = 10000` and `n = 30000`).
