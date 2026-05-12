@@ -8,4 +8,4 @@
 .quarto/
 
 # Generated results
-report/results/
+data/final/

@@ -1,0 +1,53 @@
+---
+title: "02 CV Selection Error Rate vs Sample Size"
+author: Aileen Tao
+format:
+  pdf:
+    fig-width: 7
+    fig-height: 4.5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+root <- Sys.getenv("QUARTO_PROJECT_DIR", unset = NA_character_)
+if (is.na(root) || !nzchar(root)) {
+  here::i_am("report/02_cv_error_rate.qmd")
+  root <- here::here()
+}
+options(cv_error_rate_02_report_only = TRUE)
+source(file.path(root, "code", "02_cv_error_rate.R"), local = knitr::knit_global())
+options(cv_error_rate_02_report_only = NULL)
+```
+
+# Goal
+
+Data are simulated under a **linear** truth. For each sample size on a grid from 50 to 10,000 (step 50), we run 10-fold cross-validation for a **linear** model and a **degree-3 polynomial** model, pick the model with lower mean CV MSE, and record whether CV incorrectly chose the polynomial. The **CV selection error rate** is the fraction of 1,000 Monte Carlo replications where polynomial wins.
+
+# Simulation settings
+
+```{r settings, echo=FALSE}
+knitr::kable(
+  settings_tbl,
+  caption = "Simulation and CV settings for analysis 02."
+)
+```
+
+# CV error summary by sample size
+
+```{r error-summary, echo=FALSE}
+knitr::kable(
+  error_rate_summary_tbl,
+  digits = 5,
+  caption = "Monte Carlo mean selection-error rate (truth is linear; error = poly chosen) and approximate MC standard error."
+)
+```
+
+# CV error rate vs sample size
+
+```{r error-plot, echo=FALSE, fig.cap = "CV selection error rate as a function of sample size (ribbon = MC SE band, clipped to [0, 1])."}
+print(error_rate_plot)
+```
+
+# Conclusion
+
+Under a linear data-generating process, the rate at which 10-fold CV prefers the more flexible polynomial varies with sample size; the curve summarizes this across the grid of `n`.
