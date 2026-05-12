@@ -48,6 +48,3 @@ knitr::kable(
 print(error_rate_plot)
 ```
 
-# Conclusion
-
-Under a linear data-generating process, the rate at which 10-fold CV prefers the more flexible polynomial varies with sample size; the curve summarizes this across the grid of `n`.
