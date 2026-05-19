@@ -1,8 +1,5 @@
-﻿here::i_am("src/cv_polynomial.R")
-
-if (!exists("kfold_cv_linear", mode = "function", inherits = TRUE)) {
-  source(here::here("src", "cv_linear.R"))
-}
+here::i_am("src/cv_polynomial.R")
+source(here::here("src", "cv_linear.R"))
 
 kfold_cv_polynomial <- function(
     data,

@@ -1,4 +1,4 @@
-﻿kfold_cv_linear <- function(data, formula, K, fold_id = NULL) {
+kfold_cv_linear <- function(data, formula, K, fold_id = NULL) {
   n <- nrow(data)
   stopifnot(K >= 2L, n >= K)
   if (is.null(fold_id)) {

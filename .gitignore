@@ -6,6 +6,3 @@
 # Quarto / knitr generated artifacts
 *_files/
 .quarto/
-
-# Generated results
-data/final/

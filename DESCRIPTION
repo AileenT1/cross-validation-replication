@@ -1,8 +1,0 @@
-Package: crossvalidationreplication
-Title: Cross-Validation Replication
-Version: 0.0.1
-License: MIT
-Imports:
-    dplyr,
-    ggplot2,
-    here

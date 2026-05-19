@@ -14,9 +14,7 @@ if (is.na(root) || !nzchar(root)) {
   here::i_am("report/02_cv_error_rate_poly.qmd")
   root <- here::here()
 }
-options(cv_error_rate_02_poly_report_only = TRUE)
 source(file.path(root, "code", "02_cv_error_rate_poly.R"), local = knitr::knit_global())
-options(cv_error_rate_02_poly_report_only = NULL)
 ```
 
 # Goal
@@ -44,7 +42,7 @@ knitr::kable(
 
 # CV error rate vs sample size
 
-```{r error-plot, echo=FALSE, fig.cap = "CV selection error rate as a function of sample size (ribbon = MC SE band, clipped to [0, 1])."}
+```{r error-plot, echo=FALSE, fig.cap = "CV selection error rate as a function of sample size."}
 print(error_rate_plot)
 ```
 
