@@ -1,0 +1,77 @@
+---
+title: "03 Rolling Validation Selection Error Rate (Expanding Window)"
+author: Aileen Tao
+format:
+  pdf:
+    fig-width: 7
+    fig-height: 4.5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+root <- Sys.getenv("QUARTO_PROJECT_DIR", unset = NA_character_)
+if (is.na(root) || !nzchar(root)) {
+  here::i_am("report/03_expanding_rolling_error_rate.qmd")
+  root <- here::here()
+}
+source(file.path(root, "code", "03_expanding_linear.R"), local = knitr::knit_global())
+source(file.path(root, "code", "03_expanding_poly.R"), local = knitr::knit_global())
+```
+
+# Goal (expanding window)
+
+One-step-ahead **expanding** rolling validation: initial training window `w = floor(0.5 * n)`, then for `t = w, …, n - 1` fit on rows `1:t` and predict row `t + 1`. Mean squared prediction error is averaged over `n - w` steps. We compare a **linear** model (M1) and **degree-3 polynomial** (M3), select the model with lower mean RV MSE (tie → linear), and report the Monte Carlo **selection error rate** vs `n` on `50, 100, …, 1000` (step 50), with 1,000 replications per `n`.
+
+# Linear truth
+
+## Simulation settings
+
+```{r expanding-linear-settings, echo=FALSE}
+knitr::kable(
+  expanding_linear_settings_tbl,
+  caption = "Rolling validation settings (expanding window, linear truth)."
+)
+```
+
+## Error rate summary
+
+```{r expanding-linear-summary, echo=FALSE}
+knitr::kable(
+  expanding_linear_error_rate_summary_tbl,
+  digits = 5,
+  caption = "Monte Carlo mean selection-error rate (truth is linear; error = poly chosen) and approximate MC standard error."
+)
+```
+
+## Error rate vs sample size
+
+```{r expanding-linear-plot, echo=FALSE, fig.cap = "RV selection error rate under linear truth (expanding window)."}
+print(expanding_linear_error_rate_plot)
+```
+
+# Polynomial truth
+
+## Simulation settings
+
+```{r expanding-poly-settings, echo=FALSE}
+knitr::kable(
+  expanding_poly_settings_tbl,
+  caption = "Rolling validation settings (expanding window, polynomial truth)."
+)
+```
+
+## Error rate summary
+
+```{r expanding-poly-summary, echo=FALSE}
+knitr::kable(
+  expanding_poly_error_rate_summary_tbl,
+  digits = 5,
+  caption = "Monte Carlo mean selection-error rate (truth is polynomial; error = linear chosen) and approximate MC standard error."
+)
+```
+
+## Error rate vs sample size
+
+```{r expanding-poly-plot, echo=FALSE, fig.cap = "RV selection error rate under polynomial truth (expanding window)."}
+print(expanding_poly_error_rate_plot)
+```
