@@ -9,7 +9,7 @@ linear_truth_rv_config <- list(
   window_type = "expanding",
   train_frac = 0.5,
   horizon = 1,
-  mc_runs = 100,
+  mc_runs = 1000,
   sample_sizes = seq(50, 1000, by = 50),
   beta0 = 1,
   beta1 = 2,
