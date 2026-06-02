@@ -102,7 +102,7 @@ fixed_linear_error_rate_plot <- ggplot(fixed_linear_error_rate_by_n, aes(x = n, 
   ) +
   scale_x_continuous(
     limits = c(0, 1000),
-    breaks = seq(0, 1000, by = 50)
+    breaks = seq(0, 1000, by = 100)
   ) +
   scale_y_continuous(
     limits = c(0, 0.3),
