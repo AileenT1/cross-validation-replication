@@ -1,0 +1,77 @@
+---
+title: "04 Rolling Validation Selection Error Rate (Fixed Window)"
+author: Aileen Tao
+format:
+  pdf:
+    fig-width: 7
+    fig-height: 4.5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+root <- Sys.getenv("QUARTO_PROJECT_DIR", unset = NA_character_)
+if (is.na(root) || !nzchar(root)) {
+  here::i_am("report/04_fixed_rolling_error_rate.qmd")
+  root <- here::here()
+}
+source(file.path(root, "code", "04_rv_fixed_linear.R"), local = knitr::knit_global())
+source(file.path(root, "code", "04_rv_fixed_poly.R"), local = knitr::knit_global())
+```
+
+# Goal (fixed window)
+
+One-step-ahead **fixed** rolling validation with training window **`w = 50`**: for `t = 1, …, n - w`, fit on rows `t:(t + w - 1)` and predict row `t + w`. Mean squared prediction error is averaged over `n - w` steps. We compare a **linear** model (M1) and **degree-3 polynomial** (M3), select the model with lower mean RV MSE (tie → linear), and report the Monte Carlo **selection error rate** vs `n` on **`100, 150, …, 1000`** (step 50), with 1,000 replications per `n`.
+
+# Linear truth
+
+## Simulation settings
+
+```{r fixed-linear-simulation-settings, echo=FALSE}
+knitr::kable(
+  fixed_linear_simulation_settings_tbl,
+  caption = "Simulation settings (fixed window w = 50, linear truth)."
+)
+```
+
+## Error rate summary
+
+```{r fixed-linear-summary, echo=FALSE}
+knitr::kable(
+  fixed_linear_error_rate_summary_tbl,
+  digits = 5,
+  caption = "Monte Carlo mean selection-error rate (truth is linear; error = poly chosen) and approximate MC standard error."
+)
+```
+
+## Error rate vs sample size
+
+```{r fixed-linear-plot, echo=FALSE, fig.cap = "RV selection error rate under linear truth (fixed window w = 50)."}
+print(fixed_linear_error_rate_plot)
+```
+
+# Polynomial truth
+
+## Simulation settings
+
+```{r fixed-poly-simulation-settings, echo=FALSE}
+knitr::kable(
+  fixed_poly_simulation_settings_tbl,
+  caption = "Simulation settings (fixed window w = 50, polynomial truth)."
+)
+```
+
+## Error rate summary
+
+```{r fixed-poly-summary, echo=FALSE}
+knitr::kable(
+  fixed_poly_error_rate_summary_tbl,
+  digits = 5,
+  caption = "Monte Carlo mean selection-error rate (truth is polynomial; error = linear chosen) and approximate MC standard error."
+)
+```
+
+## Error rate vs sample size
+
+```{r fixed-poly-plot, echo=FALSE, fig.cap = "RV selection error rate under polynomial truth (fixed window w = 50)."}
+print(fixed_poly_error_rate_plot)
+```

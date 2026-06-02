@@ -1,41 +1,35 @@
-# Set.seed() before run_rolling_selection_error_rate_sim() for reproducibility.
 here::i_am("src/rolling_error_rate.R")
 source(here::here("src", "rolling_validation.R"))
+source(here::here("src", "simulate_regression_data.R"))
 
-run_rolling_selection_error_rate_sim <- function(rv_config) {
-  sample_sizes <- rv_config$sample_sizes
-  mc_runs <- rv_config$mc_runs
+run_rolling_selection_error_rate_sim <- function(simulation_config, model_fitting_config) {
+  sample_sizes <- simulation_config$sample_sizes
+  mc_runs <- simulation_config$mc_runs
+  truth <- simulation_config$truth
+  candidate_models <- model_fitting_config$candidate_models
 
   by_n_list <- vector("list", length(sample_sizes))
   for (i in seq_along(sample_sizes)) {
     n_now <- sample_sizes[[i]]
     run_results <- lapply(seq_len(mc_runs), function(replication_id) {
-      x <- rnorm(n_now)
-      eps <- rnorm(n_now, sd = rv_config$sigma)
-      if (rv_config$truth_type == "linear") {
-        y <- rv_config$beta0 + rv_config$beta1 * x + eps
-      } else {
-        y <- rv_config$beta0 + rv_config$beta1 * x + rv_config$beta2 * x^2 + rv_config$beta3 * x^3 + eps
-      }
-      dat <- data.frame(y = y, x = x)
+      dat <- simulate_regression_data(n_now, simulation_config)
       dat <- dat[order(dat$x, dat$y), , drop = FALSE]
 
       linear_rv <- rolling_validate_regression(
         data = dat,
-        formula = stats::as.formula("y ~ x"),
-        rv_config = rv_config
+        formula = candidate_models$linear,
+        model_fitting_config = model_fitting_config
       )
-      poly_rv <- rolling_validate_polynomial(
+      poly_rv <- rolling_validate_regression(
         data = dat,
-        response = "y",
-        predictor = "x",
-        rv_config = rv_config
+        formula = candidate_models$polynomial,
+        model_fitting_config = model_fitting_config
       )
 
-      mean_rv_linear <- linear_rv$mean_rv_mse
-      mean_rv_poly3 <- poly_rv$mean_rv_mse
-      selected_model <- if (mean_rv_linear <= mean_rv_poly3) "linear" else "poly3"
-      wrong <- if (rv_config$truth_type == "linear") {
+      mean_linear <- linear_rv$mean_rv_mse
+      mean_poly3 <- poly_rv$mean_rv_mse
+      selected_model <- if (mean_linear <= mean_poly3) "linear" else "poly3"
+      wrong <- if (truth$type == "linear") {
         selected_model == "poly3"
       } else {
         selected_model == "linear"
@@ -57,7 +51,7 @@ run_rolling_selection_error_rate_sim <- function(rv_config) {
       mc_se = mc_se,
       stringsAsFactors = FALSE
     )
-    if (i %% 5 == 0 || i == length(sample_sizes)) {
+    if (i %% 5L == 0L || i == length(sample_sizes)) {
       message("Finished sample size index ", i, " / ", length(sample_sizes), " (n = ", n_now, ")")
     }
   }

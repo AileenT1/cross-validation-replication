@@ -14,8 +14,8 @@ if (is.na(root) || !nzchar(root)) {
   here::i_am("report/03_expanding_rolling_error_rate.qmd")
   root <- here::here()
 }
-source(file.path(root, "code", "03_expanding_linear.R"), local = knitr::knit_global())
-source(file.path(root, "code", "03_expanding_poly.R"), local = knitr::knit_global())
+source(file.path(root, "code", "03_rv_expanding_linear.R"), local = knitr::knit_global())
+source(file.path(root, "code", "03_rv_expanding_poly.R"), local = knitr::knit_global())
 ```
 
 # Goal (expanding window)
@@ -26,10 +26,10 @@ One-step-ahead **expanding** rolling validation: initial training window `w = fl
 
 ## Simulation settings
 
-```{r expanding-linear-settings, echo=FALSE}
+```{r expanding-linear-simulation-settings, echo=FALSE}
 knitr::kable(
-  expanding_linear_settings_tbl,
-  caption = "Rolling validation settings (expanding window, linear truth)."
+  expanding_linear_simulation_settings_tbl,
+  caption = "Simulation settings (expanding window, linear truth)."
 )
 ```
 
@@ -53,10 +53,10 @@ print(expanding_linear_error_rate_plot)
 
 ## Simulation settings
 
-```{r expanding-poly-settings, echo=FALSE}
+```{r expanding-poly-simulation-settings, echo=FALSE}
 knitr::kable(
-  expanding_poly_settings_tbl,
-  caption = "Rolling validation settings (expanding window, polynomial truth)."
+  expanding_poly_simulation_settings_tbl,
+  caption = "Simulation settings (expanding window, polynomial truth)."
 )
 ```
 

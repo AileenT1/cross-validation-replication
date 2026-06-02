@@ -4,19 +4,25 @@ library(ggplot2)
 here::i_am("code/02_cv_error_rate_poly.R")
 source(here::here("src", "cv_error_rate.R"))
 
-#Main simulation configuration
-poly_truth_sim_config <- list(
-  K = 10,
+#code to run the simulation
+simulation_config <- list(
   mc_runs = 1000,
   sample_sizes = seq(50, 1000, by = 50),
-  beta0 = 1,
-  beta1 = 2,
-  beta2 = 1,
-  beta3 = 1,
-  sigma = 4,
-  poly_degree = 3,
-  truth_type = "polynomial",
-  truth = "polynomial: y = beta0 + beta1*x + beta2*x^2 + beta3*x^3 + eps",
+  truth = list(
+    type = "polynomial",
+    beta = c(beta0 = 1, beta1 = 2, beta2 = 1, beta3 = 1)
+  ),
+  noise = list(
+    type = "gaussian",
+    sigma = 4
+  )
+)
+model_fitting_config <- list(
+  cv_fold = 10,
+  candidate_models = list(
+    linear = as.formula("y ~ x"),
+    polynomial = as.formula("y ~ poly(x, 3, raw = TRUE)")
+  ),
   selection_rule = "Choose poly3 if mean CV MSE strictly lower than linear; else linear"
 )
 
@@ -25,41 +31,59 @@ dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 rds_path <- file.path(results_dir, "02_cv_error_rate_poly_results.rds")
 
 cv_error_rate_poly_results <- if (file.exists(rds_path)) readRDS(rds_path) else NULL
-if (!is.null(cv_error_rate_poly_results) &&
-    all(c("poly_truth_config", "poly_truth_error_rate_by_n") %in% names(cv_error_rate_poly_results))) {
-  poly_truth_sim_config <- cv_error_rate_poly_results$poly_truth_config
-  poly_truth_error_rate_by_n <- cv_error_rate_poly_results$poly_truth_error_rate_by_n
-  message("Loaded results from ", rds_path)
-} else {
+if (is.null(cv_error_rate_poly_results) ||
+    !all(c("simulation_config", "model_fitting_config", "error_rate_by_n") %in% names(cv_error_rate_poly_results))) {
   set.seed(2026)
-  poly_truth_error_rate_by_n <- run_cv_selection_error_rate_sim(poly_truth_sim_config)
-  cv_error_rate_poly_results <- list(
-    poly_truth_config = poly_truth_sim_config,
-    poly_truth_error_rate_by_n = poly_truth_error_rate_by_n
+  poly_truth_error_rate_by_n <- run_cv_selection_error_rate_sim(
+    simulation_config,
+    model_fitting_config
   )
-  saveRDS(cv_error_rate_poly_results, rds_path)
+  saveRDS(
+    list(
+      simulation_config = simulation_config,
+      model_fitting_config = model_fitting_config,
+      error_rate_by_n = poly_truth_error_rate_by_n
+    ),
+    rds_path
+  )
   message("Saved results to ", rds_path)
+} else {
+  simulation_config <- cv_error_rate_poly_results$simulation_config
+  model_fitting_config <- cv_error_rate_poly_results$model_fitting_config
+  poly_truth_error_rate_by_n <- cv_error_rate_poly_results$error_rate_by_n
+  message("Loaded results from ", rds_path)
 }
 
-#Graphing and tables
-settings_tbl <- data.frame(
+#tables&graphs
+simulation_settings_tbl <- data.frame(
   setting = c(
-    "seed", "K", "Monte Carlo replications per n", "Sample sizes (grid)",
-    "beta0", "beta1", "beta2", "beta3", "sigma", "poly_degree", "truth", "selection rule"
+    "seed",
+    "Monte Carlo replications per n",
+    "Sample sizes (grid)",
+    "truth type",
+    "beta0",
+    "beta1",
+    "beta2",
+    "beta3",
+    "noise type",
+    "sigma"
   ),
   value = c(
     2026,
-    poly_truth_sim_config$K,
-    poly_truth_sim_config$mc_runs,
-    "50, 100, ..., 1000 (step 50)",
-    poly_truth_sim_config$beta0,
-    poly_truth_sim_config$beta1,
-    poly_truth_sim_config$beta2,
-    poly_truth_sim_config$beta3,
-    poly_truth_sim_config$sigma,
-    poly_truth_sim_config$poly_degree,
-    poly_truth_sim_config$truth,
-    poly_truth_sim_config$selection_rule
+    simulation_config$mc_runs,
+    paste0(
+      min(simulation_config$sample_sizes), ", ",
+      min(simulation_config$sample_sizes) + 50, ", ..., ",
+      max(simulation_config$sample_sizes),
+      " (step 50)"
+    ),
+    simulation_config$truth$type,
+    simulation_config$truth$beta["beta0"],
+    simulation_config$truth$beta["beta1"],
+    simulation_config$truth$beta["beta2"],
+    simulation_config$truth$beta["beta3"],
+    simulation_config$noise$type,
+    simulation_config$noise$sigma
   )
 )
 
