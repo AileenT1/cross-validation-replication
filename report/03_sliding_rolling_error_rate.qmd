@@ -14,8 +14,8 @@ if (is.na(root) || !nzchar(root)) {
   here::i_am("report/03_sliding_rolling_error_rate.qmd")
   root <- here::here()
 }
-source(file.path(root, "code", "03_sliding_linear.R"), local = knitr::knit_global())
-source(file.path(root, "code", "03_sliding_poly.R"), local = knitr::knit_global())
+source(file.path(root, "code", "03_rv_sliding_linear.R"), local = knitr::knit_global())
+source(file.path(root, "code", "03_rv_sliding_poly.R"), local = knitr::knit_global())
 ```
 
 # Goal (sliding window)
@@ -26,10 +26,10 @@ One-step-ahead **sliding** rolling validation: fixed window `w = floor(0.5 * n)`
 
 ## Simulation settings
 
-```{r sliding-linear-settings, echo=FALSE}
+```{r sliding-linear-simulation-settings, echo=FALSE}
 knitr::kable(
-  sliding_linear_settings_tbl,
-  caption = "Rolling validation settings (sliding window, linear truth)."
+  sliding_linear_simulation_settings_tbl,
+  caption = "Simulation settings (sliding window, linear truth)."
 )
 ```
 
@@ -53,10 +53,10 @@ print(sliding_linear_error_rate_plot)
 
 ## Simulation settings
 
-```{r sliding-poly-settings, echo=FALSE}
+```{r sliding-poly-simulation-settings, echo=FALSE}
 knitr::kable(
-  sliding_poly_settings_tbl,
-  caption = "Rolling validation settings (sliding window, polynomial truth)."
+  sliding_poly_simulation_settings_tbl,
+  caption = "Simulation settings (sliding window, polynomial truth)."
 )
 ```
 

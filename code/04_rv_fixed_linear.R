@@ -1,13 +1,13 @@
 library(dplyr)
 library(ggplot2)
 
-here::i_am("code/02_cv_error_rate_linear.R")
-source(here::here("src", "cv_error_rate.R"))
+here::i_am("code/04_rv_fixed_linear.R")
+source(here::here("src", "rolling_error_rate.R"))
 
 #code to run the simulation
 simulation_config <- list(
-  mc_runs = 1000,
-  sample_sizes = seq(50, 1000, by = 50),
+  mc_runs = 500,
+  sample_sizes = seq(100, 1000, by = 100),
   truth = list(
     type = "linear",
     beta = c(beta0 = 1, beta1 = 2)
@@ -18,23 +18,28 @@ simulation_config <- list(
   )
 )
 model_fitting_config <- list(
-  cv_fold = 10,
   candidate_models = list(
     linear = as.formula("y ~ x"),
     polynomial = as.formula("y ~ poly(x, 3, raw = TRUE)")
   ),
-  selection_rule = "Choose poly3 if mean CV MSE strictly lower than linear; else linear"
+  rv = list(
+    window_type = "fixed",
+    window_size = 50,
+    horizon = 1,
+    validation_step = 10,
+    selection_rule = "minimum average validation error"
+  )
 )
 
 results_dir <- here::here("data", "final")
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
-rds_path <- file.path(results_dir, "02_cv_error_rate_results.rds")
+rds_path <- file.path(results_dir, "04_rv_fixed_linear_results.rds")
 
-cv_error_rate_linear_results <- if (file.exists(rds_path)) readRDS(rds_path) else NULL
-if (is.null(cv_error_rate_linear_results) ||
-    !all(c("simulation_config", "model_fitting_config", "error_rate_by_n") %in% names(cv_error_rate_linear_results))) {
+fixed_linear_results <- if (file.exists(rds_path)) readRDS(rds_path) else NULL
+if (is.null(fixed_linear_results) ||
+    !all(c("simulation_config", "model_fitting_config", "error_rate_by_n") %in% names(fixed_linear_results))) {
   set.seed(2026)
-  linear_truth_error_rate_by_n <- run_cv_selection_error_rate_sim(
+  fixed_linear_error_rate_by_n <- run_rolling_selection_error_rate_sim(
     simulation_config,
     model_fitting_config
   )
@@ -42,20 +47,20 @@ if (is.null(cv_error_rate_linear_results) ||
     list(
       simulation_config = simulation_config,
       model_fitting_config = model_fitting_config,
-      error_rate_by_n = linear_truth_error_rate_by_n
+      error_rate_by_n = fixed_linear_error_rate_by_n
     ),
     rds_path
   )
   message("Saved results to ", rds_path)
 } else {
-  simulation_config <- cv_error_rate_linear_results$simulation_config
-  model_fitting_config <- cv_error_rate_linear_results$model_fitting_config
-  linear_truth_error_rate_by_n <- cv_error_rate_linear_results$error_rate_by_n
+  simulation_config <- fixed_linear_results$simulation_config
+  model_fitting_config <- fixed_linear_results$model_fitting_config
+  fixed_linear_error_rate_by_n <- fixed_linear_results$error_rate_by_n
   message("Loaded results from ", rds_path)
 }
 
 #tables&graphs
-simulation_settings_tbl <- data.frame(
+fixed_linear_simulation_settings_tbl <- data.frame(
   setting = c(
     "seed",
     "Monte Carlo replications per n",
@@ -87,13 +92,13 @@ simulation_settings_tbl <- data.frame(
   )
 )
 
-error_rate_summary_tbl <- linear_truth_error_rate_by_n |> arrange(n)
-error_rate_plot <- ggplot(linear_truth_error_rate_by_n, aes(x = n, y = error_rate)) +
+fixed_linear_error_rate_summary_tbl <- fixed_linear_error_rate_by_n |> arrange(n)
+fixed_linear_error_rate_plot <- ggplot(fixed_linear_error_rate_by_n, aes(x = n, y = error_rate)) +
   geom_line(linewidth = 0.35) +
   labs(
     x = "Sample size",
-    y = "CV selection error rate",
-    title = "Rate CV picks polynomial under linear truth"
+    y = "RV selection error rate",
+    title = "RV selection error rate (fixed window w = 50, linear truth)"
   ) +
   scale_x_continuous(
     limits = c(0, 1000),

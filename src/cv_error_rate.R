@@ -1,45 +1,38 @@
 here::i_am("src/cv_error_rate.R")
 source(here::here("src", "cv_linear.R"))
-source(here::here("src", "cv_polynomial.R"))
+source(here::here("src", "simulate_regression_data.R"))
 
-run_cv_selection_error_rate_sim <- function(sim_config) {
-  sample_sizes <- sim_config$sample_sizes
-  mc_runs <- sim_config$mc_runs
+run_cv_selection_error_rate_sim <- function(simulation_config, model_fitting_config) {
+  sample_sizes <- simulation_config$sample_sizes
+  mc_runs <- simulation_config$mc_runs
+  truth <- simulation_config$truth
+  candidate_models <- model_fitting_config$candidate_models
+  cv_fold <- model_fitting_config$cv_fold
 
   by_n_list <- vector("list", length(sample_sizes))
   for (i in seq_along(sample_sizes)) {
     n_now <- sample_sizes[[i]]
     run_results <- lapply(seq_len(mc_runs), function(replication_id) {
-      x <- rnorm(n_now)
-      eps <- rnorm(n_now, sd = sim_config$sigma)
-      if (sim_config$truth_type == "linear") {
-        y <- sim_config$beta0 + sim_config$beta1 * x + eps
-      } else {
-        y <- sim_config$beta0 + sim_config$beta1 * x + sim_config$beta2 * x^2 + sim_config$beta3 * x^3 + eps
-      }
-      dat <- data.frame(y = y, x = x)
-      fold_id <- sample(rep(seq_len(sim_config$K), length.out = n_now))
+      dat <- simulate_regression_data(n_now, simulation_config)
 
+      fold_id <- sample(rep(seq_len(cv_fold), length.out = n_now))
       linear_cv <- kfold_cv_linear(
         data = dat,
-        formula = stats::as.formula("y ~ x"),
-        K = sim_config$K,
+        formula = candidate_models$linear,
+        K = cv_fold,
         fold_id = fold_id
       )
-      poly_cv <- kfold_cv_polynomial(
+      poly_cv <- kfold_cv_linear(
         data = dat,
-        response = "y",
-        predictor = "x",
-        degree = sim_config$poly_degree,
-        K = sim_config$K,
-        raw = TRUE,
+        formula = candidate_models$polynomial,
+        K = cv_fold,
         fold_id = fold_id
       )
 
-      mean_cv_linear <- linear_cv$mean_cv_mse
-      mean_cv_poly3 <- poly_cv$mean_cv_mse
-      selected_model <- if (mean_cv_linear <= mean_cv_poly3) "linear" else "poly3"
-      wrong <- if (sim_config$truth_type == "linear") {
+      mean_linear <- linear_cv$mean_cv_mse
+      mean_poly3 <- poly_cv$mean_cv_mse
+      selected_model <- if (mean_linear <= mean_poly3) "linear" else "poly3"
+      wrong <- if (truth$type == "linear") {
         selected_model == "poly3"
       } else {
         selected_model == "linear"
@@ -61,7 +54,7 @@ run_cv_selection_error_rate_sim <- function(sim_config) {
       mc_se = mc_se,
       stringsAsFactors = FALSE
     )
-    if (i %% 25 == 0 || i == length(sample_sizes)) {
+    if (i %% 25L == 0L || i == length(sample_sizes)) {
       message("Finished sample size index ", i, " / ", length(sample_sizes), " (n = ", n_now, ")")
     }
   }

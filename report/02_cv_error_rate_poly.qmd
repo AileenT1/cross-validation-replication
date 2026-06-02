@@ -23,10 +23,10 @@ Data are simulated under a **polynomial** truth. For each sample size on a grid 
 
 # Simulation settings
 
-```{r settings, echo=FALSE}
+```{r simulation-settings, echo=FALSE}
 knitr::kable(
-  settings_tbl,
-  caption = "Simulation and CV settings for analysis 02 (polynomial truth)."
+  simulation_settings_tbl,
+  caption = "Simulation settings for analysis 02 (polynomial truth)."
 )
 ```
 
