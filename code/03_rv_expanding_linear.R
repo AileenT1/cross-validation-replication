@@ -4,9 +4,9 @@ library(ggplot2)
 here::i_am("code/03_rv_expanding_linear.R")
 source(here::here("src", "rolling_error_rate.R"))
 
-#code to run the simulation
+# code to run the simulation
 simulation_config <- list(
-  mc_runs = 1000,
+  mc_runs = 500,
   sample_sizes = seq(50, 1000, by = 50),
   truth = list(
     type = "linear",
@@ -14,18 +14,19 @@ simulation_config <- list(
   ),
   noise = list(
     type = "gaussian",
-    sigma = 4
+    sigma = 2
   )
-)
+)    
+
 model_fitting_config <- list(
   candidate_models = list(
     linear = as.formula("y ~ x"),
     polynomial = as.formula("y ~ poly(x, 3, raw = TRUE)")
   ),
   rv = list(
-    window_type = "expanding",
-    train_frac = 0.5,
+    window_size = 20,
     horizon = 1,
+    validation_step = 1 ,
     selection_rule = "minimum average validation error"
   )
 )
@@ -33,8 +34,8 @@ model_fitting_config <- list(
 results_dir <- here::here("data", "final")
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 rds_path <- file.path(results_dir, "03_rv_expanding_linear_results.rds")
-
 expanding_linear_results <- if (file.exists(rds_path)) readRDS(rds_path) else NULL
+
 if (is.null(expanding_linear_results) ||
     !all(c("simulation_config", "model_fitting_config", "error_rate_by_n") %in% names(expanding_linear_results))) {
   set.seed(2026)
@@ -58,7 +59,7 @@ if (is.null(expanding_linear_results) ||
   message("Loaded results from ", rds_path)
 }
 
-#tables&graphs
+# tables & graphs
 expanding_linear_simulation_settings_tbl <- data.frame(
   setting = c(
     "seed",
@@ -70,7 +71,10 @@ expanding_linear_simulation_settings_tbl <- data.frame(
     "beta2",
     "beta3",
     "noise type",
-    "sigma"
+    "sigma",
+    "expanding initial window size",
+    "horizon",
+    "validation step"
   ),
   value = c(
     2026,
@@ -84,14 +88,17 @@ expanding_linear_simulation_settings_tbl <- data.frame(
     simulation_config$truth$type,
     simulation_config$truth$beta["beta0"],
     simulation_config$truth$beta["beta1"],
-    simulation_config$truth$beta["beta2"],
-    simulation_config$truth$beta["beta3"],
+    NA,
+    NA,
     simulation_config$noise$type,
-    simulation_config$noise$sigma
+    simulation_config$noise$sigma,
+    model_fitting_config$rv$window_size,
+    model_fitting_config$rv$horizon,
+    model_fitting_config$rv$validation_step
   )
 )
-
 expanding_linear_error_rate_summary_tbl <- error_rate_by_n |> arrange(n)
+max_n <- max(simulation_config$sample_sizes)
 expanding_linear_error_rate_plot <- ggplot(error_rate_by_n, aes(x = n, y = error_rate)) +
   geom_line(linewidth = 0.35) +
   labs(
@@ -100,11 +107,12 @@ expanding_linear_error_rate_plot <- ggplot(error_rate_by_n, aes(x = n, y = error
     title = "RV selection error rate (expanding window, linear truth)"
   ) +
   scale_x_continuous(
-    limits = c(0, 1000),
-    breaks = seq(0, 1000, by = 50)
+    limits = c(0, max_n),
+    breaks = seq(0, max_n, by = 50)
   ) +
   scale_y_continuous(
-    limits = c(0, 0.3),
+    limits = c(0, 1),
+    breaks = seq(0, 1, by = 0.2),
     expand = expansion(mult = c(0, 0.02))
   ) +
   theme_bw()
