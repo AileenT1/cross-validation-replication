@@ -1,6 +1,8 @@
 ---
 title: "03 Rolling Validation Selection Error Rate (Expanding Window)"
 author: Aileen Tao
+execute:
+  dir: project
 format:
   pdf:
     fig-width: 7
@@ -9,18 +11,11 @@ format:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-root <- Sys.getenv("QUARTO_PROJECT_DIR", unset = NA_character_)
-if (is.na(root) || !nzchar(root)) {
-  here::i_am("report/03_expanding_rolling_error_rate.qmd")
-  root <- here::here()
-}
+here::i_am("report/03_expanding_rolling_error_rate.qmd")
+root <- here::here()
 source(file.path(root, "code", "03_rv_expanding_linear.R"), local = knitr::knit_global())
 source(file.path(root, "code", "03_rv_expanding_poly.R"), local = knitr::knit_global())
 ```
-
-# Goal (expanding window)
-
-One-step-ahead **expanding** rolling validation: initial training window `w = floor(0.5 * n)`, then for `t = w, …, n - 1` fit on rows `1:t` and predict row `t + 1`. Mean squared prediction error is averaged over `n - w` steps. We compare a **linear** model (M1) and **degree-3 polynomial** (M3), select the model with lower mean RV MSE (tie → linear), and report the Monte Carlo **selection error rate** vs `n` on `50, 100, …, 1000` (step 50), with 1,000 replications per `n`.
 
 # Linear truth
 
