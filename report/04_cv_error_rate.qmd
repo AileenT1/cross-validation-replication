@@ -1,0 +1,76 @@
+---
+title: "04 Cross-Validation Selection Error Rate"
+author: Aileen Tao
+execute:
+  dir: project
+format:
+  pdf:
+    fig-width: 7
+    fig-height: 4.5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+here::i_am("report/04_cv_error_rate.qmd")
+root <- here::here()
+source(file.path(root, "code", "04_cv_error_rate_linear.R"), local = knitr::knit_global())
+source(file.path(root, "code", "04_cv_error_rate_poly.R"), local = knitr::knit_global())
+```
+
+# Goal (cross-validation)
+
+For each sample size on `50, 100, …, 1000` (step 50), we run **10-fold** cross-validation for a **linear** model (M1) and **degree-3 polynomial** (M3), select the model with lower mean CV MSE (tie → linear), and report the Monte Carlo **selection error rate** vs `n`, with **500** replications per `n`.
+
+# Linear truth
+
+## Simulation settings
+
+```{r cv-linear-simulation-settings, echo=FALSE}
+knitr::kable(
+  cv_linear_simulation_settings_tbl,
+  caption = "Simulation settings (cross-validation, linear truth)."
+)
+```
+
+## Error rate summary
+
+```{r cv-linear-summary, echo=FALSE}
+knitr::kable(
+  cv_linear_error_rate_summary_tbl,
+  digits = 5,
+  caption = "Monte Carlo mean selection-error rate (truth is linear; error = poly chosen) and approximate MC standard error."
+)
+```
+
+## Error rate vs sample size
+
+```{r cv-linear-plot, echo=FALSE, fig.cap = "CV selection error rate under linear truth."}
+print(cv_linear_error_rate_plot)
+```
+
+# Polynomial truth
+
+## Simulation settings
+
+```{r cv-poly-simulation-settings, echo=FALSE}
+knitr::kable(
+  cv_poly_simulation_settings_tbl,
+  caption = "Simulation settings (cross-validation, polynomial truth)."
+)
+```
+
+## Error rate summary
+
+```{r cv-poly-summary, echo=FALSE}
+knitr::kable(
+  cv_poly_error_rate_summary_tbl,
+  digits = 5,
+  caption = "Monte Carlo mean selection-error rate (truth is polynomial; error = linear chosen) and approximate MC standard error."
+)
+```
+
+## Error rate vs sample size
+
+```{r cv-poly-plot, echo=FALSE, fig.cap = "CV selection error rate under polynomial truth."}
+print(cv_poly_error_rate_plot)
+```
