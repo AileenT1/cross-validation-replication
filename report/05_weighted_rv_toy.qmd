@@ -1,0 +1,366 @@
+---
+title: "05 Weighted Rolling Validation (Toy Example)"
+author: Aileen Tao
+execute:
+  dir: project
+format:
+  pdf:
+    fig-width: 7
+    fig-height: 4.5
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+here::i_am("report/05_weighted_rv_toy.qmd")
+root <- here::here()
+source(file.path(root, "code", "05_weighted_rv_toy.R"), local = knit_global())
+```
+
+# Simulation process and logic
+
+This section describes the full simulation pipeline: what is being compared, how one-step rolling validation is scored, how power weights enter, and how Monte Carlo estimates are formed.
+
+## What the simulation is asking
+
+We have two predictors for a sequence $Y_1,\ldots,Y_n$:
+
+- **Model 0:** at time $i$, predict with the running sample mean of the past,
+  $$
+  \hat\mu_{i-1}
+  =
+  \frac{1}{i-1}
+  \sum_{j=1}^{i-1} Y_j.
+  $$
+- **Model 1 (oracle):** always predict $0$.
+
+The true mean is $0$, so Model 1 is correct. Rolling validation builds a score $\Xi_n^{(w)}$. We incorrectly select Model 0 when $\Xi_n^{(w)} < 0$. The target quantity is
+$$
+P\bigl(\Xi_n^{(w)} < 0\bigr)
+$$
+as a function of sample size $n$ and weight exponent $\alpha$.
+
+## Indices: $n$, $k$, and $i$
+
+- $n$: total length of one data path $Y_1,\ldots,Y_n$.
+- $i$: validation time, $i = 2,\ldots,n$. At time $i$ we predict $Y_i$ using only the past.
+- $k = i-1$: training size (number of past observations used to form $\hat\mu_{i-1}$).
+
+So each one-step task is: train on $Y_1,\ldots,Y_k$, validate on $Y_{k+1}=Y_i$.
+
+## One-step rolling validation (unweighted increment)
+
+For each $i = 2,\ldots,n$, squared-error losses are
+$$
+L_0 = (Y_i - \hat\mu_{i-1})^2,
+\qquad
+L_1 = (Y_i - 0)^2 = Y_i^2.
+$$
+The loss difference simplifies to the **unweighted increment**
+$$
+L_0 - L_1
+=
+-2 Y_i \hat\mu_{i-1} + \hat\mu_{i-1}^2.
+$$
+In code this is computed for an entire path at once (via cumulative means), returning a length-$(n-1)$ vector of increments for $i=2,\ldots,n$. That vector **is** the expanding one-step RV process; weights and summation come next.
+
+## Power weights and the score $\Xi$
+
+A power weight at validation time $i$ is
+$$
+w_i = i^{\alpha}.
+$$
+For a fixed $\alpha$ and $n$, the weight vector is
+$$
+\bigl(2^{\alpha},\, 3^{\alpha},\, \ldots,\, n^{\alpha}\bigr),
+$$
+one weight per validation time (not a single weight $n^{\alpha}$).
+
+The weighted rolling-validation score is the weighted sum of increments:
+$$
+\Xi_n^{(w)}
+=
+\sum_{i=2}^{n}
+w_i
+\bigl(-2 Y_i \hat\mu_{i-1} + \hat\mu_{i-1}^2\bigr)
+=
+\sum_{i=2}^{n}
+i^{\alpha}
+\bigl(-2 Y_i \hat\mu_{i-1} + \hat\mu_{i-1}^2\bigr).
+$$
+Special case $\alpha = 0$: every $w_i = 1$, so $\Xi_n$ is the classical unweighted sum (the **control**).
+
+Sign convention:
+
+- $\Xi_n^{(w)} > 0$: prefers Model 1 (oracle),
+- $\Xi_n^{(w)} < 0$: prefers Model 0 (incorrect selection in this toy).
+
+## Theoretical mean (used as a check)
+
+Because $Y_i\sim N(0,1)$ is independent of $\hat\mu_{i-1}$ and $E[Y_i]=0$,
+$$
+E[-2 Y_i \hat\mu_{i-1}] = 0,
+\qquad
+E[\hat\mu_{i-1}^2] = \frac{1}{i-1}.
+$$
+Hence
+$$
+E[\Xi_n^{(w)}]
+=
+\sum_{i=2}^{n}
+\frac{w_i}{i-1}
+=
+\sum_{i=2}^{n}
+\frac{i^{\alpha}}{i-1}.
+$$
+The simulation reports both the Monte Carlo mean of $\Xi$ and this exact theoretical mean.
+
+## Monte Carlo grid: how one experiment is run
+
+Data are $Y_1,\ldots,Y_n \stackrel{\mathrm{iid}}{\sim} N(0,1)$. Random seed is fixed at `2026` inside the grid runner.
+
+For a chosen list of sample sizes and alphas, and `mc_runs` replications, the efficient procedure is:
+
+1. Let $n_{\max}$ be the largest sample size on the grid.
+2. **Precompute** weight vectors $w_i = i^{\alpha}$ for every pair $(\alpha, n)$.
+3. **Precompute** theoretical means $\sum_{i=2}^{n} w_i/(i-1)$ for every pair $(\alpha, n)$.
+4. For each Monte Carlo replication $r = 1,\ldots,\texttt{mc\_runs}$:
+   - draw one long path $Y_1,\ldots,Y_{n_{\max}}$;
+   - compute the full unweighted increment vector for $i=2,\ldots,n_{\max}$ **once**;
+   - for each $\alpha$ and each $n$ on the grid:
+     - take the first $n-1$ increments (as if the path had length $n$);
+     - form $\Xi = \sum_{i=2}^{n} w_i \cdot \mathrm{inc}_i$;
+     - store that value as replication $r$ for $(\alpha, n)$.
+5. For each $(\alpha, n)$, summarize the `mc_runs` stored values:
+   - $\widehat{P}(\Xi < 0)$ (incorrect-selection rate),
+   - sample mean and variance of $\Xi$,
+   - theoretical mean,
+   - Chebyshev ratio $R_n = \widehat{\mathrm{Var}}(\Xi)/(\widehat{\mathrm{mean}})^2$.
+
+Reusing one long path across all smaller $n$ and all alphas makes the grid much cheaper than resimulating a new path for every $(\alpha, n)$.
+
+## Two experiments in this report
+
+- **Broad grid:** $\alpha \in \{-1,-0.5,0,0.5,1\}$, with $\alpha = 0$ as the unweighted control.
+- **Near-zero grid:** $\alpha \in \{-0.5,-0.25,-0.1,0,0.1,0.25,0.5\}$, same $n$-grid and Monte Carlo size, to look more carefully around the control.
+
+Throughout the report we distinguish:
+
+- **mathematical derivation** (exact or asymptotic formulas),
+- **Monte Carlo evidence** (simulated means, variances, error rates),
+- **interpretation** (informal reading of plots; not a theorem).
+
+# Goal
+
+This report studies a **Gaussian toy example** of rolling-validation consistency and asks whether the incorrect-selection probability still goes to zero after **power weights** $w_i = i^{\alpha}$. We keep $\alpha = 0$ as a control, compare a broad set of power weights, then run a second experiment focused on alphas near zero.
+
+# Toy-example setup (formal summary)
+
+- Data: $Y_1,\ldots,Y_n \stackrel{\mathrm{iid}}{\sim} N(0,1)$.
+- Model 0: running mean $\hat\mu_{i-1}$; Model 1: predict $0$.
+- Score:
+  $$
+  \Xi_n^{(w)}
+  =
+  \sum_{i=2}^{n}
+  i^{\alpha}
+  \bigl(-2 Y_i \hat\mu_{i-1} + \hat\mu_{i-1}^{2}\bigr).
+  $$
+- Incorrect selection when $\Xi_n^{(w)} < 0$.
+
+```{r settings}
+kable(
+  weighted_rv_simulation_settings_tbl,
+  caption = "Simulation settings for analysis 05."
+)
+```
+
+# Original control: $\alpha = 0$
+
+For the unweighted case, theory gives $E[\Xi_n] \sim \log n$ and $\operatorname{Var}(\Xi_n)=O(1)$, so $P(\Xi_n<0)\to 0$.
+
+```{r control-table}
+kable(
+  control_results_tbl,
+  digits = 4,
+  caption = "Control results under alpha = 0 (Monte Carlo evidence)."
+)
+```
+
+```{r control-plot, fig.cap = "Control (alpha = 0): incorrect-selection probability vs n."}
+print(control_pneg_plot)
+```
+
+# Broad power-weight comparison
+
+We compare $\alpha \in \{-1,-0.5,0,0.5,1\}$ with the same $n$-grid and $1000$ Monte Carlo replications. Plots use a log scale on $n$, with a tick at every sample size, and include $0$ on the $y$-axis (except the variance plot, which uses a log $y$-scale so $0$ cannot appear).
+
+# Correct theoretical mean derivation
+
+**Derivation.** Expanding the one-step difference and using independence of $Y_i$ and $\hat\mu_{i-1}$ with $E[Y_i]=0$ gives
+$E[-2Y_i\hat\mu_{i-1}]=0$ and $E[\hat\mu_{i-1}^2]=1/(i-1)$. Therefore
+
+$$
+E[\Xi_n^{(w)}]
+=
+\sum_{i=2}^{n}
+\frac{i^{\alpha}}{i-1}.
+$$
+
+Since $i^{\alpha}/(i-1)\approx i^{\alpha-1}$, the expected signal has order:
+
+- $\alpha=-1$: $E[\Xi_n^{(w)}]=O(1)$
+- $\alpha=-0.5$: $E[\Xi_n^{(w)}]=O(1)$
+- $\alpha=0$: $E[\Xi_n^{(w)}]\sim\log n$
+- $\alpha=0.5$: $E[\Xi_n^{(w)}]\asymp 2\sqrt{n}$
+- $\alpha=1$: $E[\Xi_n^{(w)}]\asymp n$
+
+A diverging mean is **not** enough for consistency via Chebyshev; one also needs the ratio $R_n$ to go to zero. Variance and $R_n$ behavior below are **Monte Carlo evidence**, not formal theorems.
+
+**Normalized weights.** Multiplying all weights by a common positive constant (for example replacing $i^{\alpha}$ by $(i/n)^{\alpha}$) does not change the sign of $\Xi_n^{(w)}$, so it does not change the selection event.
+
+```{r mean-plot, fig.cap = "Empirical mean (solid) and theoretical mean (dashed) of Xi_n versus n."}
+print(weighted_rv_mean_plot)
+```
+
+# Incorrect-selection probability results
+
+```{r pneg-plot, fig.cap = "P(Xi_n < 0) versus n for each broad power weight alpha."}
+print(weighted_rv_pneg_plot)
+```
+
+The $x$-axis is log-scaled with a tick at every sample size on the grid. Linear $y$-axes include $0$.
+
+# Variance results
+
+Variance for $\alpha=1$ is much larger than for the other alphas, so the $y$-axis uses a log scale so that $\alpha\in\{-1,-0.5,0,0.5\}$ remain visible.
+
+```{r var-plot, fig.cap = "Empirical variance of Xi_n versus n (log y-scale)."}
+print(weighted_rv_var_plot)
+```
+
+# Chebyshev ratio results
+
+$$
+R_n
+=
+\frac{\operatorname{Var}(\Xi_n^{(w)})}{\bigl(E[\Xi_n^{(w)}]\bigr)^{2}}.
+$$
+
+If $R_n\to 0$, Chebyshev would imply $P(\Xi_n^{(w)}<0)\to 0$. A single small value of $R_n$ at one $n$ does **not** prove consistency. We look at the **trend** in $n$.
+
+For $\alpha=0$, $R_n$ clearly decreases with $n$ (Monte Carlo evidence). For the other broad alphas in this experiment, the simulation does not show the same clear tendency toward zero. This is simulation evidence only.
+
+```{r R-plot, fig.cap = "Chebyshev ratio R_n versus n (Monte Carlo evidence)."}
+print(weighted_rv_R_plot)
+```
+
+# Near-zero-alpha experiment
+
+Because the broad grid suggests that $\alpha=0$ behaves differently from more strongly weighted cases, we run a second experiment with
+
+$$
+\alpha\in\{-0.5,-0.25,-0.1,0,0.1,0.25,0.5\},
+$$
+
+using the same `mc_runs = 1000` and the same $n$-grid. This plot is separate from the broad-alpha comparison.
+
+```{r near-settings}
+kable(
+  near_zero_settings_tbl,
+  caption = "Settings for the near-zero-alpha experiment."
+)
+```
+
+```{r near-pneg-plot, fig.cap = "Near-zero alpha experiment: P(Xi_n < 0) versus n."}
+print(weighted_rv_near_pneg_plot)
+```
+
+```{r near-results}
+kable(
+  near_zero_results_tbl |>
+    select(alpha, n, p_neg, mean_xi, theory_mean, var_xi, R),
+  digits = 4,
+  caption = "Near-zero alpha Monte Carlo results."
+)
+```
+
+```{r near-summary}
+near_summary_display <- weighted_rv_near_summary_tbl |>
+  rename(
+    Alpha = alpha,
+    Weight = weight,
+    `Expected signal` = expected_signal_order,
+    `Error probability` = error_probability_behavior,
+    `R behavior` = R_behavior,
+    Interpretation = interpretation
+  )
+
+near_summary_display |>
+  kable(
+    format = "latex",
+    booktabs = TRUE,
+    caption = "Near-zero alpha summary (derivation vs simulation interpretation).",
+    align = c("c", "c", "l", "l", "l", "l")
+  ) |>
+  kable_styling(
+    latex_options = "hold_position",
+    font_size = 9
+  ) |>
+  column_spec(1, width = "1.2cm") |>
+  column_spec(2, width = "1.8cm") |>
+  column_spec(3, width = "3.3cm") |>
+  column_spec(4, width = "4.2cm") |>
+  column_spec(5, width = "3.5cm") |>
+  column_spec(6, width = "5.0cm") |>
+  landscape()
+```
+
+# Summary and interpretation
+
+The tables below mix **derivation** (expected signal order) with **Monte Carlo** descriptions and **simulation interpretations**. They do not claim a theorem for weighted cases. The first covers the broad alpha grid; the near-zero summary appears above with that experiment.
+
+```{r summary}
+summary_display <- weighted_rv_summary_tbl |>
+  rename(
+    Alpha = alpha,
+    Weight = weight,
+    `Expected signal` = expected_signal_order,
+    `Error probability` = error_probability_behavior,
+    `R behavior` = R_behavior,
+    Interpretation = interpretation
+  )
+
+summary_display |>
+  kable(
+    format = "latex",
+    booktabs = TRUE,
+    caption = "Summary by alpha (derivation vs simulation interpretation).",
+    align = c("c", "c", "l", "l", "l", "l")
+  ) |>
+  kable_styling(
+    latex_options = "hold_position",
+    font_size = 9
+  ) |>
+  column_spec(1, width = "1.2cm") |>
+  column_spec(2, width = "1.6cm") |>
+  column_spec(3, width = "3.3cm") |>
+  column_spec(4, width = "4.2cm") |>
+  column_spec(5, width = "3.5cm") |>
+  column_spec(6, width = "5.2cm") |>
+  landscape()
+```
+
+## Full numeric results (broad grid)
+
+```{r full-results}
+kable(
+  weighted_rv_results_tbl |>
+    select(alpha, n, p_neg, mean_xi, theory_mean, var_xi, R),
+  digits = 4,
+  caption = "Full Monte Carlo results by alpha and n (broad grid)."
+)
+```
