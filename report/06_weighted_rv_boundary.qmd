@@ -1,0 +1,349 @@
+---
+title: "06 Power-Weight Boundary for Rolling Validation"
+author: Aileen Tao
+execute:
+  dir: project
+format:
+  pdf:
+    fig-width: 7
+    fig-height: 4.5
+    keep-tex: false
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+here::i_am("report/06_weighted_rv_boundary.qmd")
+root <- here::here()
+source(file.path(root, "code", "06_weighted_rv_boundary.R"), local = knit_global())
+```
+
+# Weighted rolling validation in the Gaussian mean example
+
+The weighted simulations in Analysis 05 suggested that exponents near zero behave differently from larger positive or negative exponents. Here I study this boundary analytically in the Gaussian mean example.
+
+Let $Y_1,\ldots,Y_n$ be independent with $Y_i\sim N(\theta_\star,1)$. At validation time $i$, consider the sample-mean predictor
+
+$$
+\widehat\theta_{i-1}=\frac{1}{i-1}\sum_{t=1}^{i-1}Y_t
+$$
+
+and the oracle predictor $\theta_\star$. For a fixed exponent $\alpha\in\mathbb R$, assign validation time $i$ the weight $w_i=i^\alpha$. Writing $\xi_i=Y_i-\theta_\star$, so that $\xi_i\stackrel{\mathrm{iid}}{\sim}N(0,1)$, the weighted rolling-validation loss difference is
+
+$$
+\Xi_n^{(\alpha)}
+=\sum_{i=2}^n i^\alpha
+\left\{(\widehat\theta_{i-1}-\theta_\star)^2
+-2\xi_i(\widehat\theta_{i-1}-\theta_\star)\right\}.
+$$
+
+Positive values favor the oracle; $\Xi_n^{(\alpha)}<0$ is the event that rolling validation incorrectly prefers the fitted sample-mean rule. The quantity studied below is
+
+$$
+R_n(\alpha)=
+\frac{\operatorname{Var}(\Xi_n^{(\alpha)})}
+{\{\mathbb E[\Xi_n^{(\alpha)}]\}^2}.
+$$
+
+Since the mean is positive, Chebyshev's inequality gives
+
+$$
+\mathbb P(\Xi_n^{(\alpha)}<0)
+\leq
+\mathbb P\!\left(
+\left|\Xi_n^{(\alpha)}-\mathbb E\Xi_n^{(\alpha)}\right|
+\geq \mathbb E\Xi_n^{(\alpha)}
+\right)
+\leq R_n(\alpha).
+$$
+
+Thus $R_n(\alpha)\to0$ is sufficient for selection consistency. The converse does not follow from this bound.
+
+# Mean and variance decomposition
+
+Put $S_m=\sum_{t=1}^m\xi_t$. Then $\widehat\theta_{i-1}-\theta_\star=S_{i-1}/(i-1)$, which is independent of the centered variable $\xi_i$. Consequently,
+
+$$
+\mathbb E\left[-2\xi_i\frac{S_{i-1}}{i-1}\right]=0,
+\qquad
+\mathbb E\left[\frac{S_{i-1}^2}{(i-1)^2}\right]=\frac{1}{i-1},
+$$
+
+and hence
+
+$$
+\mathbb E[\Xi_n^{(\alpha)}]
+=\sum_{i=2}^n\frac{i^\alpha}{i-1}.
+\tag{1}
+$$
+
+Because $i^\alpha/(i-1)\sim i^{\alpha-1}$, the series comparison and integral test yield
+
+$$
+\begin{aligned}
+\mathbb E[\Xi_n^{(\alpha)}]&\longrightarrow M_\infty(\alpha), && \alpha<0,\\
+\mathbb E[\Xi_n^{(0)}]&\sim\log n, && \alpha=0,\\
+\mathbb E[\Xi_n^{(\alpha)}]&\sim n^\alpha/\alpha, && \alpha>0.
+\end{aligned}
+\tag{2}
+$$
+
+where $M_\infty(\alpha)=\sum_{i=2}^\infty i^\alpha/(i-1)\in(0,\infty)$ for $\alpha<0$.
+
+To analyze the variance, expand each $S_{i-1}^2$, collect the coefficients of $\xi_t^2$, and then collect the coefficient of each product $\xi_k\xi_l$, $k<l$. Define
+
+$$
+a_{n,t}=\sum_{i=t+1}^n\frac{i^\alpha}{(i-1)^2},
+\qquad 1\leq t\leq n-1,
+$$
+
+and
+
+$$
+b_{n,l}=\sum_{i=l+1}^n\frac{i^\alpha}{(i-1)^2}
+-\frac{l^\alpha}{l-1},
+\qquad 2\leq l\leq n.
+$$
+
+The first sum in $b_{n,l}$ comes from the squared running means at validation times $i>l$, while the second term comes from the cross-product at validation time $l$. Rearranging the finite sums gives
+
+$$
+\Xi_n^{(\alpha)}
+=\sum_{t=1}^{n-1}a_{n,t}\xi_t^2
++2\sum_{l=2}^n b_{n,l}\sum_{k=1}^{l-1}\xi_k\xi_l.
+\tag{3}
+$$
+
+After centering the diagonal part, its summands are multiples of $\xi_t^2-1$. A diagonal term and an off-diagonal product have zero covariance because at least one independent centered Gaussian factor appears to the first power. The same observation shows that two distinct products $\xi_k\xi_l$ and $\xi_r\xi_s$ are orthogonal unless their unordered index pairs agree. Finally, $\operatorname{Var}(\xi_t^2)=2$ and $\mathbb E(\xi_k^2\xi_l^2)=1$ for $k\ne l$. It follows from (3) that
+
+$$
+\operatorname{Var}(\Xi_n^{(\alpha)})
+=2\sum_{t=1}^{n-1}a_{n,t}^2
++4\sum_{l=2}^n(l-1)b_{n,l}^2.
+\tag{4}
+$$
+
+# Asymptotic behavior under power weights
+
+**Proposition.** For each fixed $\alpha\in\mathbb R$,
+
+$$
+R_n(\alpha)\longrightarrow
+\begin{cases}
+R_\infty(\alpha)>0, & \alpha<0,\\
+0, & \alpha=0,\\
+\dfrac{2\alpha^2}{1+\alpha}, & \alpha>0.
+\end{cases}
+\tag{5}
+$$
+
+**Proof.** Suppose first that $\alpha<0$. Since $i^\alpha/(i-1)^2\leq C i^{\alpha-2}$, comparison with the corresponding integral gives, uniformly in $n$,
+
+$$
+0\leq a_{n,t}\leq C t^{\alpha-1}.
+$$
+
+The triangle inequality gives the same order for the off-diagonal coefficients,
+
+$$
+|b_{n,l}|
+\leq \sum_{i=l+1}^n\frac{i^\alpha}{(i-1)^2}
++\frac{l^\alpha}{l-1}
+\leq C l^{\alpha-1}.
+$$
+
+The dominating series $\sum_t t^{2\alpha-2}$ and $\sum_l l^{2\alpha-1}$ converge because $2\alpha-2<-1$ and $2\alpha-1<-1$. For each fixed index the coefficients converge as $n\to\infty$, so dominated convergence applied to (4) yields a finite limit $V_\infty(\alpha)$. This limit is positive because the limiting diagonal coefficients are positive. Together with (2), this proves
+
+$$
+R_n(\alpha)\longrightarrow
+\frac{V_\infty(\alpha)}{M_\infty(\alpha)^2}>0.
+\tag{6}
+$$
+
+For $\alpha=0$, $a_{n,t}\leq\sum_{k=t}^\infty k^{-2}\leq C/t$, so the diagonal sum in (4) is bounded. For the off-diagonal coefficient, write
+
+$$
+b_{n,l}=\sum_{k=l}^{n-1}\frac{1}{k^2}-\frac{1}{l-1}.
+$$
+
+The integral bounds for the infinite tail give
+
+$$
+\left|\sum_{k=l}^\infty k^{-2}-\frac{1}{l-1}\right|\leq C l^{-2},
+\qquad
+\sum_{k=n}^\infty k^{-2}\leq Cn^{-1}.
+$$
+
+Therefore $|b_{n,l}|\leq C(l^{-2}+n^{-1})$. Using $(x+y)^2\leq2x^2+2y^2$,
+
+$$
+\sum_{l=2}^n(l-1)b_{n,l}^2
+\leq C\sum_{l=2}^n l^{-3}
++Cn^{-2}\sum_{l=2}^n l
+=O(1).
+$$
+
+Equation (4) now gives $\operatorname{Var}(\Xi_n^{(0)})=O(1)$, while (1) equals the harmonic sum $H_{n-1}\sim\log n$. Hence $R_n(0)=O((\log n)^{-2})\to0$.
+
+It remains to consider $\alpha>0$. The diagonal coefficients satisfy
+
+$$
+a_{n,t}\leq C\sum_{i=t+1}^n i^{\alpha-2}.
+$$
+
+For $0<\alpha<1$, this is at most $Ct^{\alpha-1}$, and therefore
+
+$$
+\sum_{t=1}^{n-1}a_{n,t}^2=
+\begin{cases}
+O(1), & 0<\alpha<1/2,\\
+O(\log n), & \alpha=1/2,\\
+O(n^{2\alpha-1}), & 1/2<\alpha<1.
+\end{cases}
+$$
+
+For $\alpha=1$, the same sum is $O(n)$, since $a_{n,t}\leq C\{1+\log(n/t)\}$ and $n^{-1}\sum_{t<n}\{1+\log(n/t)\}^2$ is bounded by an integrable Riemann sum. For $\alpha>1$, $a_{n,t}\leq Cn^{\alpha-1}$, giving $\sum_ta_{n,t}^2=O(n^{2\alpha-1})$. Every one of these bounds is $o(n^{2\alpha})$, so the diagonal contribution is negligible on the required scale.
+
+For the off-diagonal term, put $x=l/n$. On every interval $x\in[\varepsilon,1]$, the integral approximation for the coefficient sum is uniform and gives
+
+$$
+n^{1-\alpha}b_{n,l}\longrightarrow
+g_\alpha(x)
+=\int_x^1u^{\alpha-2}\,du-x^{\alpha-1}.
+\tag{7}
+$$
+
+When $\alpha\ne1$, this function is
+
+$$
+g_\alpha(x)=\frac{1-\alpha x^{\alpha-1}}{\alpha-1}.
+$$
+
+For $0<\alpha<1$, the omitted endpoint requires care. The integral comparison used above also gives $|b_{n,l}|\leq Cl^{\alpha-1}$, and hence
+
+$$
+n^{-2\alpha}\sum_{l\leq\varepsilon n}l b_{n,l}^2
+\leq \frac{C}{n}\sum_{l\leq\varepsilon n}(l/n)^{2\alpha-1}
+\leq C\varepsilon^{2\alpha}.
+\tag{8}
+$$
+
+Thus the small-$x$ contribution vanishes after $n\to\infty$ and then $\varepsilon\downarrow0$; on $[\varepsilon,1]$, (7) supplies the ordinary Riemann-sum limit. For $\alpha>1$, the bound $|b_{n,l}|\leq Cn^{\alpha-1}$ makes the normalized contribution from $l\leq\varepsilon n$ at most $C\varepsilon^2$, while $g_\alpha$ is bounded at zero. Consequently,
+
+$$
+n^{-2\alpha}\sum_{l=2}^n(l-1)b_{n,l}^2
+\longrightarrow \int_0^1xg_\alpha(x)^2\,dx.
+\tag{9}
+$$
+
+For $\alpha\ne1$, direct integration yields
+
+$$
+\int_0^1xg_\alpha(x)^2\,dx
+=\frac{1}{(\alpha-1)^2}
+\left\{\frac12-\frac{2\alpha}{\alpha+1}+\frac{\alpha}{2}\right\}
+=\frac{1}{2(\alpha+1)}.
+\tag{10}
+$$
+
+When $\alpha=1$, (7) becomes $g_1(x)=\log(1/x)-1$. Its logarithmic singularity is integrable against $x\,dx$, and truncation uses the bound $C\{1+\log(n/l)\}$ exactly as for the diagonal term. Moreover,
+
+$$
+\int_0^1x\{\log(1/x)-1\}^2\,dx=\frac14,
+$$
+
+which agrees with (10) at $\alpha=1$. Combining (4), (9), (10), and the negligible diagonal contribution proves
+
+$$
+\operatorname{Var}(\Xi_n^{(\alpha)})
+\sim\frac{2}{1+\alpha}n^{2\alpha}.
+$$
+
+Dividing by the square of the mean $n^\alpha/\alpha$ from (2) proves the positive-$\alpha$ line of (5). $\square$
+
+# Critical value of $\alpha$
+
+```{r regime-table}
+kable(
+  regime_summary_tbl,
+  format = "latex",
+  col.names = c("Regime", "Mean", "Variance", "Ratio"),
+  caption = "Asymptotic behavior for fixed power-weight exponents.",
+  booktabs = TRUE,
+  escape = FALSE
+) |>
+  kable_styling(latex_options = "hold_position", font_size = 9)
+```
+
+Among fixed power weights, $R_n(\alpha)\to0$ only at
+
+$$
+\alpha^\star=0.
+$$
+
+This is a point boundary, not an empirical cutoff such as $0.1$ or $0.2$. The positive-side limit $2\alpha^2/(1+\alpha)$ approaches zero as $\alpha\downarrow0$, and the negative-side constant can likewise be small near zero. Consequently, a small nonzero exponent can mimic a vanishing ratio over a finite range even though its fixed-$\alpha$ limit is positive.
+
+A preliminary calculation suggested $R_n(\alpha)\to\alpha/2$ for $\alpha>0$. Recomputing the exact off-diagonal coefficient gives instead $2\alpha^2/(1+\alpha)$, as shown in (10) after applying the variance factor $4$ and normalizing by $\{n^\alpha/\alpha\}^2$.
+
+# Numerical verification
+
+The numerical calculations use the exact coefficient identity (4) and an independent Monte Carlo experiment. Lines in the figures are exact finite-$n$ theory; points are empirical estimates. The simulations are diagnostic and do not enter the proof.
+
+```{r simulation-settings}
+kable(
+  simulation_settings_tbl,
+  caption = "Numerical settings for Analysis 06.",
+  booktabs = TRUE
+) |>
+  kable_styling(latex_options = "hold_position", font_size = 9)
+```
+
+```{r ratio-plot, fig.cap="Exact Chebyshev-ratio trajectories (lines) and Monte Carlo variance estimates divided by the exact squared mean (points)."}
+print(weighted_rv_R_plot)
+```
+
+For small positive exponents convergence is slow: the finite-$n$ curve can remain well above its limiting level even at large $n$. This is the finite-sample behavior that made the boundary difficult to identify from Analysis 05 alone.
+
+```{r moment-plot, fig.height=7, fig.cap="Exact means and variances (lines) compared with Monte Carlo estimates (points). Each panel uses a logarithmic vertical scale."}
+print(weighted_rv_moment_plot)
+```
+
+```{r pneg-plot, fig.cap="Estimated incorrect-selection probability, with pointwise 95% Monte Carlo error bars."}
+print(weighted_rv_pneg_plot)
+```
+
+The final figure displays the limiting ratio. Negative-exponent points are numerical evaluations of the convergent infinite coefficient series; the nonnegative curve uses the closed-form result in (5).
+
+```{r floor-plot, fig.height=2.7, fig.cap="Asymptotic Chebyshev-ratio limit as a function of the fixed power exponent. The dashed line marks the unique zero at alpha = 0."}
+print(weighted_rv_floor_plot)
+```
+
+The negative-side limits were numerically stable when the truncation level was increased from $5\times10^5$ to $10^6$.
+
+```{r limit-check-table}
+kable(
+  limit_check_tbl,
+  digits = 6,
+  col.names = c("Alpha", "Limit at 1,000,000", "Limit at 500,000", "Absolute change"),
+  caption = "Truncation stability of negative-alpha ratio limits.",
+  booktabs = TRUE
+) |>
+  kable_styling(latex_options = "hold_position", font_size = 9)
+```
+
+# Interpretation of the result
+
+The effect of the weights depends on how they change both the mean and the variance of the rolling-validation score. When $\alpha<0$, later observations receive less weight, and both the mean and variance approach finite positive limits. When $\alpha=0$, the mean grows like $\log n$, while cancellation in the variance calculation keeps the variance bounded. Therefore, $R_n(0)\to0$, and Chebyshev's inequality shows that the probability of selecting the wrong model tends to zero.
+
+When $\alpha>0$, the mean grows faster, but the variance grows at the same order as the squared mean. As a result,
+
+$$
+R_n(\alpha)\longrightarrow\frac{2\alpha^2}{1+\alpha}>0.
+$$
+
+Thus, a faster-growing mean does not necessarily lead to a vanishing ratio. Among fixed power exponents, $\alpha=0$ is the only value for which $R_n(\alpha)\to0$.
+
+This conclusion concerns the ratio $R_n(\alpha)$. For $\alpha\ne0$, its positive limit means that Chebyshev's inequality does not establish selection consistency; it does not prove inconsistency either. Determining whether the actual incorrect-selection probability tends to zero would require a further argument.
