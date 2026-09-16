@@ -1,0 +1,954 @@
+---
+title: "07 Slowly Varying Weights for Rolling Validation"
+author: Aileen Tao
+execute:
+  dir: project
+format:
+  pdf:
+    fig-width: 7
+    fig-height: 4.5
+    keep-tex: false
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \usepackage{placeins}
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(ggplot2)
+opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+              fig.pos = "H", out.width = "100%")
+here::i_am("report/07_slowly_varying_rv.qmd")
+root <- here::here()
+source(file.path(root, "code", "07_slowly_varying_rv.R"), local = knit_global())
+```
+
+# Research question and choice of weights
+
+Analysis 06 studied power weights $w_i=i^\alpha$. Here I ask whether
+$\log i$, a polynomial of $\log i$, $\log\log i$, and slowly decreasing
+weights lead to consistent selection in the same Gaussian example.
+
+## Candidate weight functions
+
+The seven main weights cover a baseline, slowly increasing weights, and
+two decreasing weights.
+
+```{r candidate-table}
+candidates07 <- data.frame(
+  Weight = c("$1$", "$\\log(i+1)$", "$[\\log(i+1)]^2$",
+             "$1+\\log(i+1)+[\\log(i+1)]^2$", "$\\log\\log(i+e)$",
+             "$1/\\log(i+1)$", "$1/[\\log(i+1)]^2$"),
+  Reason = c("Unweighted baseline", "Check the log idea",
+             "Higher log power", "Check a polynomial of log",
+             "Check the log-log idea", "Test decreasing weights",
+             "Test a faster decrease"),
+  Role = c("Reference", "Slow growth", "Stronger slow growth",
+           "Genuine polynomial of log", "Extremely slow growth",
+           "Possible boundary case", "Compare the ratio criterion"),
+  check.names = FALSE)
+kable(candidates07, format = "latex", booktabs = TRUE, escape = FALSE,
+      col.names = c("Weight", "Why test it?", "Expected role")) |>
+  kable_styling(latex_options = "HOLD_position", font_size = 8) |>
+  column_spec(1, width = "5.2cm") |>
+  column_spec(2, width = "4.0cm") |>
+  column_spec(3, width = "3.8cm")
+```
+
+## Why use shifted logarithms?
+
+The shifts keep every weight defined and positive at small indices:
+$1/\log1$ is undefined, while $i+e>e$ implies
+$\log\log(i+e)>0$. They do not change the asymptotics because
+$\log(i+1)\sim\log i$ and $\log\log(i+e)\sim\log\log i$.
+
+The family $w_i=[\log(i+1)]^p$ contains five of the main cases.
+I also examine $p=-1.25,-0.75,-0.5,0.5$ near the boundary and include
+$i^{0.01}$ as a reference to Analysis 06.
+
+# Common setup and decision criterion
+
+## What counts as a wrong selection?
+
+Let $Y_i=\theta_\star+\xi_i$, where the $\xi_i$ are independent $N(0,1)$,
+and put $S_m=\sum_{t=1}^m\xi_t$. At time $i$, compare
+$\widehat\theta_{i-1}=(i-1)^{-1}\sum_{t<i}Y_t$ with the oracle
+$\theta_\star$. For positive deterministic weights $w_i$, their weighted
+squared-loss difference is
+
+$$
+\Xi_n=\sum_{i=2}^n w_i
+\left\{\frac{S_{i-1}^2}{(i-1)^2}
+-2\xi_i\frac{S_{i-1}}{i-1}\right\}.
+\tag{1}
+$$
+
+A positive score favors the oracle; $\Xi_n<0$ is a wrong selection.
+
+## What the Chebyshev ratio can establish
+
+Write
+
+$$
+M_n=\mathbb E\Xi_n,\qquad V_n=\operatorname{Var}(\Xi_n),
+\qquad R_n=\frac{V_n}{M_n^2}.
+$$
+
+Since $M_n>0$, Chebyshev's inequality gives
+
+$$
+\mathbb P(\Xi_n<0)\leq \min\{1,R_n\}.
+\tag{2}
+$$
+
+Thus $R_n\to0$ proves consistency. A positive ratio limit is inconclusive;
+it does not prove inconsistency.
+
+## One formula for all candidate weights
+
+The following formula applies to every deterministic weight considered here.
+
+**Proposition 1.** For any positive deterministic weights, define
+
+$$
+\begin{aligned}
+M_n&=\sum_{i=2}^n\frac{w_i}{i-1},\\
+a_{n,t}&=\sum_{i=t+1}^n\frac{w_i}{(i-1)^2},
+&&1\leq t<n,\\
+b_{n,l}&=\sum_{i=l+1}^n\frac{w_i}{(i-1)^2}
+          -\frac{w_l}{l-1},
+&&2\leq l\leq n.
+\end{aligned}
+$$
+
+Then
+
+$$
+\begin{aligned}
+\Xi_n-M_n
+ &=\sum_{t=1}^{n-1}a_{n,t}(\xi_t^2-1)
+   +2\sum_{l=2}^n b_{n,l}\sum_{k<l}\xi_k\xi_l,\\
+V_n
+ &=2\sum_{t=1}^{n-1}a_{n,t}^2
+   +4\sum_{l=2}^n(l-1)b_{n,l}^2.
+\end{aligned}
+\tag{3}
+$$
+
+*Proof.* The sample mean at time $i$ uses only earlier observations, so
+$S_{i-1}$ is independent of $\xi_i$. This gives
+$\mathbb E(\xi_i S_{i-1})=0$ and
+$\mathbb E S_{i-1}^2=i-1$, yielding the mean.
+To obtain the variance, expand $S_{i-1}^2$ in (1) and gather the terms
+containing each $\xi_t^2$ and each $\xi_k\xi_l$.
+The centered squares have variance $2$, and each product $\xi_k\xi_l$
+has variance $1$. Distinct centered squares are uncorrelated.
+A square and a product are uncorrelated because some independent centered
+Gaussian variable appears to an odd power. The same reasoning applies to two
+different products, including products sharing one index. There are $l-1$
+products with larger index $l$, so summing their variances gives (3).
+$\square$
+
+For the weights considered here, it helps to separate coefficients that
+would remain if validation continued indefinitely from the change caused
+by stopping at $n$. Suppose
+$\sum_{i=2}^\infty w_i/(i-1)^2<\infty$, and define
+
+$$
+A_t=\sum_{i=t+1}^\infty\frac{w_i}{(i-1)^2},
+\qquad B_l=A_l-\frac{w_l}{l-1},
+\qquad T_n=A_n.
+$$
+
+Here $A_t$ is the infinite future tail of a diagonal coefficient,
+$T_n=A_n$ is the tail removed by stopping at $n$, and $B_l$ is the
+off-diagonal residual after subtracting the direct validation contribution.
+The quantity $B_l$ is important because its leading terms cancel.
+
+Then $a_{n,t}=A_t-T_n$ and $b_{n,l}=B_l-T_n$ exactly. Since the weights are
+positive, $0\leq a_{n,t}\leq A_t$. Using $(x-y)^2\leq2x^2+2y^2$ in (3) gives
+
+$$
+V_n\leq
+2\sum_{t<n}A_t^2+
+8\sum_{l=2}^n(l-1)B_l^2+
+4n(n-1)T_n^2.
+\tag{4}
+$$
+
+The first sum is the diagonal contribution; the other terms bound the
+off-diagonal contribution. **For the log-power weights, the diagonal part
+stays bounded.**
+
+If the sum of
+$\sum_{t<n}A_t^2$, $\sum_{l=2}^n(l-1)B_l^2$, and $n^2T_n^2$
+is $o(M_n^2)$, then $R_n\to0$ and selection is consistent.
+
+**Key point.** This condition does not require increasing weights; it only
+requires the mean signal to dominate the variance. This is why decreasing
+weights are included.
+
+# What happens in the log-power family?
+
+Consider $w_i=[\log(i+1)]^p$, with fixed $p\in\mathbb R$, and write
+$L=\log n$.
+
+**Proposition 2.** For the log-power family, the ratio tends to zero exactly
+when $p\geq-1$.
+For decreasing weights, I use two limiting constants:
+$M_\infty(p)=\sum_{i=2}^\infty[\log(i+1)]^p/(i-1)$
+is used only for $p<-1$, and, for $p<0$,
+
+$$
+V_\infty(p)=2\sum_{t=1}^\infty A_t^2
+             +4\sum_{l=2}^\infty(l-1)B_l^2\in(0,\infty).
+$$
+
+The first is a finite mean for $p<-1$. The second is the finite variance
+reached when $p<0$.
+
+## Roadmap
+
+The mean and variance each have three regimes:
+
+$$
+M_n\begin{cases}
+\sim L^{p+1}/(p+1),&p>-1,\\[2pt]
+\sim\log L,&p=-1,\\[2pt]
+\to M_\infty(p),&p<-1,
+\end{cases}
+\qquad
+V_n\begin{cases}
+\sim2L^{2p},&p>0,\\[2pt]
+\to\pi^2,&p=0,\\[2pt]
+\to V_\infty(p),&p<0.
+\end{cases}
+$$
+
+**The mean has three regimes. The variance has three regimes.**
+Because their breakpoints differ, the ratio has five cases:
+$p>0$, $p=0$, $-1<p<0$, $p=-1$, and $p<-1$.
+
+## Case 1: $p>0$ -- increasing log powers
+
+The tested log and squared-log weights correspond to $p=1$ and $p=2$.
+In this case,
+
+$$
+M_n\sim\frac{L^{p+1}}{p+1},\qquad V_n\sim2L^{2p},
+\qquad R_n\sim\frac{2(p+1)^2}{L^2}\to0.
+$$
+
+The ratio vanishes, so selection is consistent.
+
+## Case 2: $p=0$ -- the unweighted reference
+
+Here $w_i=1$, $M_n\sim L$, and
+$V_n=6\sum_{m=1}^{n-1}m^{-2}\to\pi^2$. Consequently,
+$R_n\sim\pi^2/L^2\to0$. The mean diverges while the variance stays
+bounded, so the baseline is consistent.
+
+## Case 3: $-1<p<0$ -- slowly decreasing weights
+
+For example, $p=-1/2$ gives $w_i=1/\sqrt{\log(i+1)}$. These weights
+decrease to zero, yet
+
+$$
+M_n\sim\frac{L^{p+1}}{p+1}\to\infty,\qquad
+V_n\to V_\infty(p),\qquad
+R_n\sim\frac{V_\infty(p)(p+1)^2}{L^{2p+2}}\to0.
+$$
+
+The mean diverges and the variance stays bounded. **Decreasing weights
+can still be consistent.**
+
+## Case 4: $p=-1$ -- the boundary case
+
+For $w_i=1/\log(i+1)$,
+
+$$
+M_n\sim\log L=\log\log n,\qquad V_n\to V_\infty(-1),
+\qquad R_n\sim\frac{V_\infty(-1)}{(\log L)^2}\to0.
+$$
+
+The mean diverges only as $\log\log n$, so the ratio vanishes slowly.
+This boundary case is still consistent.
+
+## Case 5: $p<-1$ -- a positive ratio limit
+
+The main comparison $p=-2$ gives $w_i=1/[\log(i+1)]^2$. Now
+$M_n\to M_\infty(p)>0$ and $V_n\to V_\infty(p)>0$, so
+$R_n\to V_\infty(p)/M_\infty(p)^2>0$.
+The total mean signal stops growing and the variance also has a finite
+positive limit. **A positive ratio limit does not prove inconsistency.**
+
+## The boundary in one statement
+
+$$
+\boxed{p=-1\text{ is the Chebyshev-ratio boundary for }[\log(i+1)]^p.}
+\tag{5}
+$$
+
+Specifically, $p\geq-1\Rightarrow R_n\to0$, while
+$p<-1\Rightarrow R_n\to\text{a positive constant}$.
+On the first side, (2) proves consistency. On the second, the ratio
+provides no conclusion about the limiting wrong-selection probability.
+
+**Why $p=-1$?** For $p\geq-1$ the mean still diverges; for $p<-1$ it
+converges. Meanwhile, the variance is bounded for $p<0$, and for $p>0$
+it grows more slowly than $M_n^2$. This places the ratio boundary at
+$p=-1$. As in Analysis 06, a positive ratio limit only makes the
+Chebyshev argument inconclusive.
+
+## Why the five cases have these limits
+
+*Proof.* The mean is the easiest part: each validation time contributes
+$w_i/(i-1)$. Replacing
+$[\log(i+1)]^p/(i-1)$ by $(\log i)^p/i$ changes the partial sum by a bounded
+amount: the termwise error is
+$O(((\log i)^p+(\log i)^{p-1})/i^2)$, which is summable.
+The integral $\int(\log x)^p\,dx/x$, with $u=\log x$, then shows exactly
+when those contributions add up without bound:
+
+$$
+\begin{aligned}
+M_n&\sim L^{p+1}/(p+1), &&p>-1,\\
+M_n&\sim\log L, &&p=-1,\\
+M_n&\longrightarrow M_\infty(p)\in(0,\infty), &&p<-1.
+\end{aligned}
+\tag{6}
+$$
+
+For the variance, the leading terms cancel:
+
+$$
+A_l\sim\frac{(\log l)^p}{l},
+\qquad
+\frac{w_l}{l-1}\sim\frac{(\log l)^p}{l},
+\qquad
+B_l=A_l-\frac{w_l}{l-1}.
+$$
+
+Thus $B_l$ is smaller than either term separately. More precisely,
+
+$$
+\begin{aligned}
+A_t&\sim \frac{(\log t)^p}{t},
+&T_n&\sim\frac{L^p}{n},\\
+|B_l|&\leq C_p\left\{
+  \frac{(\log l)^{p-1}}{l}+
+  \frac{(\log l)^p}{l^2}\right\}.
+\end{aligned}
+\tag{7}
+$$
+
+Here and below constants may depend on fixed $p$. To estimate $A_t$,
+compare its tail sum with $I_p(t)=\int_t^\infty(\log x)^p x^{-2}\,dx$.
+On each unit interval the derivative bound gives a total comparison error
+$O((\log t)^p/t^2)$. Integration by parts gives
+$I_p(t)=(\log t)^p/t+pI_{p-1}(t)$.
+Also $I_q(t)=O((\log t)^q/t)$ for every fixed $q$: substitute $x=te^v$,
+so the remaining integral is
+$t^{-1}\int_0^\infty(\log t+v)^q e^{-v}\,dv$.
+The leading term is $(\log t)^p/t$, proving the first line of (7).
+
+To see the cancellation in $B_l$, replace $(i-1)^{-2}$ in $A_l$ by
+$[i(i-1)]^{-1}$; the error is $O((\log l)^p/l^2)$.
+Summation by parts gives
+
+$$
+\sum_{i=l+1}^\infty\frac{w_i}{i(i-1)}
+=\frac{w_{l+1}}{l}
++\sum_{i=l+2}^\infty\frac{w_i-w_{i-1}}{i-1}.
+$$
+
+The difference between $w_{l+1}/l$ and $w_l/(l-1)$ is
+$O((\log l)^p/l^2+(\log l)^{p-1}/l^2)$.
+The mean-value theorem bounds
+$|w_i-w_{i-1}|\leq C_p(\log i)^{p-1}/i$.
+Applying the preceding integral bound to the remaining sum proves (7).
+**The leading term in $B_l$ cancels.**
+For $p=0$ this derivative term is zero and $B_l=O(l^{-2})$.
+
+Now suppose $p>0$. The diagonal part is bounded because
+$a_{n,t}\leq A_t$ and $\sum_t A_t^2<\infty$ by (7). For the
+off-diagonal part, define
+
+$$
+D_n=\sum_{l=2}^n(l-1)B_l^2.
+$$
+
+The quantity $D_n$ collects the $B_l^2$ contribution. It lets us compare
+that contribution with the terminal term involving $T_n^2$.
+
+From (7), the first term in the bound for $B_l$ determines the larger
+order:
+
+$$
+(l-1)B_l^2
+=O\left(\frac{(\log l)^{2p-2}}{l}\right),
+\qquad
+D_n=O\left(\sum_{l=2}^n
+\frac{(\log l)^{2p-2}}{l}\right).
+$$
+
+Integral comparison reduces the sum to
+
+$$
+\int^n\frac{(\log x)^{2p-2}}{x}\,dx
+=\int^{\log n}u^{2p-2}\,du,
+\qquad u=\log x.
+$$
+
+The integral is bounded, logarithmic, or polynomial according as
+$2p-2$ is less than, equal to, or greater than $-1$. Solving
+$2p-2=-1$ gives the threshold $p=1/2$. Hence
+
+$$
+D_n=
+\begin{cases}
+O(1),&0<p<1/2,\\[2pt]
+O(\log\log n),&p=1/2,\\[2pt]
+O(L^{2p-1}),&p>1/2.
+\end{cases}
+$$
+
+The three-way split is only needed for the common conclusion
+
+$$
+\boxed{D_n=o(L^{2p})}.
+$$
+
+Next, $T_n\sim L^p/n$ and
+$\sum_{l=2}^n(l-1)\sim n^2/2$, so
+
+$$
+T_n^2\sum_{l=2}^n(l-1)
+\sim\frac{L^{2p}}{n^2}\frac{n^2}{2}
+=\frac{L^{2p}}{2}.
+$$
+
+After the factor $4$ in (3), the terminal contribution is
+
+$$
+4T_n^2\sum_{l=2}^n(l-1)\sim2L^{2p}.
+$$
+
+Thus the terminal term has order $L^{2p}$, larger than $D_n$.
+
+Since
+
+$$
+(B_l-T_n)^2=B_l^2-2B_lT_n+T_n^2,
+$$
+
+the cross term satisfies
+
+$$
+2\left|T_n\sum_{l=2}^n(l-1)B_l\right|
+\leq
+2\left\{
+\left(\sum_{l=2}^n(l-1)B_l^2\right)
+\left(T_n^2\sum_{l=2}^n(l-1)\right)
+\right\}^{1/2}.
+$$
+
+Equivalently, the right side is
+$2\{D_nT_n^2\sum_{l=2}^n(l-1)\}^{1/2}$.
+Since $D_n=o(L^{2p})$ and
+$T_n^2\sum(l-1)\asymp L^{2p}$, the cross term is
+$o(L^{2p})$. Thus Cauchy--Schwarz makes it asymptotically smaller
+than the terminal term.
+
+The four variance contributions now have orders
+
+- diagonal part: $O(1)$;
+- $D_n$ part: $o(L^{2p})$;
+- cross term: $o(L^{2p})$;
+- terminal part, including the factor $4$: $\sim2L^{2p}$.
+
+Therefore,
+
+$$
+\boxed{V_n\sim2L^{2p},\qquad p>0.}
+$$
+
+For $p<0$, $\sum(l-1)B_l^2$ converges, whereas
+$n^2T_n^2\sim L^{2p}\to0$. The same cross-term bound tends to zero.
+Dominated convergence for the diagonal sum, and convergence of the
+$B_l$ series for the off-diagonal sum, give $V_n\to V_\infty(p)$.
+This limit is strictly positive because its first term includes $2A_1^2>0$.
+
+At $p=0$, the unit weights give
+$V_n=6\sum_{m=1}^{n-1}m^{-2}\to\pi^2$.
+For computation, if $W_{n-1}=\sum_{i=2}^{n-1}w_i$, then
+
+$$
+V_n-V_{n-1}
+=\frac{2w_n}{(n-1)^2}\{(2n-1)w_n-2W_{n-1}\}.
+\tag{8}
+$$
+
+This recurrence also follows from the quadratic-form matrix: its old block gains
+$w_n\mathbf1\mathbf1^\mathsf T/(n-1)^2$, its new off-diagonal entries are
+$-w_n/(n-1)$, and the sum of all entries of the old matrix is $-W_{n-1}$.
+For unit weights (8) is $6/(n-1)^2$, starting from $V_1=0$.
+Combining these variance limits with (6) proves (5). $\square$
+
+Hence
+
+$$
+V_n\begin{cases}
+\sim2L^{2p},&p>0,\\[2pt]
+\to\pi^2,&p=0,\\[2pt]
+\to V_\infty(p),&p<0.
+\end{cases}
+$$
+
+**The variance has three regimes:** the terminal term dominates for
+$p>0$, the unit-weight case has a special identity, and the variance
+stays bounded for $p<0$.
+
+The case $p=0$ has its own leading constant. For every fixed $p>0$, the
+terminal contribution eventually leads; with unit weights it does not.
+The positive-$p$ constant therefore cannot simply be evaluated at $p=0$.
+
+# Polynomial and log-log weights
+
+## Polynomial of log
+
+The tested polynomial is
+
+$$
+w_i=1+\log(i+1)+[\log(i+1)]^2.
+$$
+
+More generally, for
+$w_i=P(\log(i+1))$ with $P(x)=cx^k+$ lower-order terms,
+the highest-degree term dominates.
+
+**Proposition 3.** Suppose $w_i=P(\log(i+1))>0$, where $P$ is a
+polynomial of degree $k\geq1$ with positive leading coefficient $c$.
+Then
+
+$$
+M_n\sim\frac{c}{k+1}L^{k+1},\qquad
+V_n\sim2c^2L^{2k},\qquad
+R_n\sim\frac{2(k+1)^2}{L^2}.
+\tag{9}
+$$
+
+Thus a polynomial of log reduces asymptotically to the log-power case
+$p=k$. For the tested degree-two polynomial, $R_n\sim18/L^2\to0$.
+
+*Proof.* The leading term controls the weight because
+$P(x)=cx^k+O(x^{k-1})$, so
+$P(\log(i+1))=c[\log(i+1)]^k+O([\log(i+1)]^{k-1})$.
+When the terms are integrated to obtain the mean, lower degrees contribute
+only $O(L^k)$, compared with the leading $cL^{k+1}/(k+1)$.
+They also make a smaller contribution to the tail coefficient $A_t$:
+$O((\log t)^{k-1}/t)$, lower order than $c(\log t)^k/t$.
+The derivative of the weight is $O((\log x)^{k-1}/x)$, so the proof of (7) gives
+$A_t\sim c(\log t)^k/t$ and
+$B_l=O((\log l)^{k-1}/l+(\log l)^k/l^2)$.
+Thus $T_n=A_n\sim cL^k/n$, and $\sum_{l=2}^n(l-1)\sim n^2/2$ gives
+
+$$
+4T_n^2\sum_{l=2}^n(l-1)
+\sim4\frac{c^2L^{2k}}{n^2}\frac{n^2}{2}
+=2c^2L^{2k}.
+$$
+
+The lower-degree terms contribute only lower orders to both moments.
+The diagonal term is bounded, while
+$\sum_{l=2}^n(l-1)B_l^2=O(L^{2k-1})=o(L^{2k})$.
+The cross term is also lower order by the Cauchy--Schwarz estimate in
+Proposition 2. Equation (3) therefore gives (9), with the highest degree
+determining the leading orders. $\square$
+
+## Log-log weight
+
+The exact weight $w_i=\log\log(i+e)$ grows more slowly than $\log i$.
+
+**Proposition 3 (continued).** For this weight,
+
+$$
+M_n\sim L\log L,\qquad
+V_n\sim2(\log L)^2,\qquad
+R_n\sim\frac{2}{L^2}.
+\tag{10}
+$$
+
+The common $(\log L)^2$ factor cancels from the ratio.
+
+*Proof.* The mean differs by a bounded amount from
+$\int^n\log\log x\,dx/x$. With $u=\log x$ and $du=dx/x$,
+$\int\log u\,du=u\log u-u$. Hence
+$M_n=L\log L-L+O(1)\sim L\log L-L\sim L\log L$, where $L=\log n$.
+The derivative of the shifted weight is
+$1/((x+e)\log(x+e))$. The same tail comparison and summation by parts give
+
+$$
+A_t\sim\frac{\log\log t}{t},
+\qquad
+B_l=O\left(\frac{1}{l\log l}+\frac{\log\log l}{l^2}\right).
+$$
+
+Thus $T_n=A_n\sim\log\log n/n=(\log L)/n$, so
+
+$$
+4T_n^2\sum_{l=2}^n(l-1)
+\sim4\frac{(\log L)^2}{n^2}\frac{n^2}{2}
+=2(\log L)^2.
+$$
+
+The sums $\sum A_t^2$ and $\sum(l-1)B_l^2$ stay bounded. The same
+Cauchy--Schwarz argument used above makes the cross term smaller than
+the terminal term.
+Equation (3) therefore gives $V_n\sim2(\log L)^2$, proving (10).
+$\square$
+
+Dividing by the squared mean gives
+
+$$
+R_n\sim\frac{2(\log L)^2}{L^2(\log L)^2}
+=\frac{2}{L^2}=\frac{2}{(\log n)^2}\to0.
+$$
+
+Thus the log-log weight is consistent.
+
+## Theory summary for the seven tested weights
+
+Table 1 puts the seven main weights side by side. Here $L=\log n$,
+and each finite positive variance limit depends on the particular weight.
+The last column records what the Chebyshev ratio establishes.
+
+```{r regime-table}
+regimes07 <- data.frame(
+  Weight = c("$1$", "$\\log(i+1)$", "$[\\log(i+1)]^2$",
+             "$1+\\log(i+1)+[\\log(i+1)]^2$", "$\\log\\log(i+e)$",
+             "$1/\\log(i+1)$", "$1/[\\log(i+1)]^2$"),
+  Mean = c("$\\sim L$", "$\\sim L^2/2$", "$\\sim L^3/3$",
+           "$\\sim L^3/3$", "$\\sim L\\log L$", "$\\sim\\log L$",
+           "$\\to M_\\infty(-2)>0$"),
+  Variance = c("$\\to\\pi^2$", "$\\sim2L^2$", "$\\sim2L^4$",
+               "$\\sim2L^4$", "$\\sim2(\\log L)^2$", "$\\to V_\\infty(-1)>0$",
+               "$\\to V_\\infty(-2)>0$"),
+  Ratio = c("$\\sim\\pi^2/L^2$", "$\\sim8/L^2$", "$\\sim18/L^2$",
+            "$\\sim18/L^2$", "$\\sim2/L^2$",
+            "$\\asymp(\\log L)^{-2}$", "$\\to V_\\infty(-2)/M_\\infty(-2)^2>0$"),
+  Conclusion = c(rep("Consistent", 6), "Not decided"),
+  check.names = FALSE)
+kable(regimes07, format = "latex", booktabs = TRUE, escape = FALSE, label = NA,
+      col.names = c("Weight", "Mean behavior", "Variance behavior",
+                    "Ratio behavior", "Conclusion"),
+      caption = "Theory summary for the seven main weights; L = log n.") |>
+  kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 8)
+```
+
+# Numerical verification
+
+## Simulation design and checks
+
+The simulations use centered Gaussian observations and the weights listed
+above. Exact moments extend to larger $n$; simulation checks finite-sample
+agreement.
+
+There are 5,000 independent replications, seed 2026, processed in batches of
+250. The sample sizes are
+$100,200,500,1000,2000,5000,10000,20000,50000,100000$.
+Each Gaussian path is reused across weights and sample sizes, so the
+comparisons are dependent.
+Exact trajectories use `r length(config07$theory_n)` sample sizes,
+approximately log-spaced from $50$ through $10^7$, including the simulation
+sizes. Equation (8) makes this calculation linear in the largest sample size.
+
+The implementation of (3) was checked against a quadratic-form matrix at
+$n=2,3,7,19$ for every weight, including the mean against the matrix
+trace, the variance against twice the squared Frobenius norm, the score
+against the existing increment function, and (8) against (3).
+The largest absolute discrepancy is
+`r format(max(results07$validation$max_absolute_error), scientific = TRUE, digits = 2)`.
+The exact unweighted variance and seeded reproducibility were also checked.
+
+## Do the empirical variances agree with the exact ratios?
+
+Blue curves are exact ratios; orange points use simulated variances divided
+by the exact squared mean. The horizontal axis is logarithmic and panels
+have separate vertical scales.
+
+```{r ratio-plot, fig.height=6.5, fig.cap="Exact and empirical Chebyshev ratios for the seven main weights."}
+ratio_plot07
+```
+
+## Do wrong-selection frequencies decrease with sample size?
+
+Points are simulated wrong-selection frequencies and bars are pointwise
+95% Wilson intervals. The Monte Carlo standard error is
+$\{\widehat q(1-\widehat q)/5000\}^{1/2}$.
+A zero count still has a positive Wilson upper endpoint.
+
+```{r probability-plot, fig.height=6.5, fig.cap="Incorrect-selection frequencies and Monte Carlo uncertainty."}
+probability_plot07
+```
+
+```{r endpoint-table}
+kable(endpoint_table07, format = "latex", booktabs = TRUE, digits = 4, label = NA,
+      caption = "Exact moments and ratios, with error estimates, at n = 100,000. Lower and Upper are Wilson endpoints.") |>
+  kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 8)
+```
+
+## Why is the ratio shrinking?
+
+Figure 3 separates mean and variance. For positive log powers both grow,
+while for negative log powers the variance has a finite limit.
+
+```{r moment-plot, fig.height=4.5, fig.cap="Theoretical and empirical means and variances."}
+moment_plot07
+```
+
+## Where is the boundary in the log-power family?
+
+Figure 4 shows the $p=-1$ boundary. Its ratio decreases only as
+$(\log\log n)^{-2}$, explaining the slow finite-sample change.
+
+```{r family-plot, fig.height=4.1, fig.cap="Exact ratio trajectories within the log-power family."}
+family_plot07
+```
+
+For $p<-1$, stopping the exact calculation at a finite $N$ leaves out
+a mean tail that shrinks slowly. The omitted part is asymptotic to
+$(\log N)^{p+1}/(-p-1)$, even for very large $N$.
+Table 3 adds approximate tail corrections and shows how the estimates
+change as $N$ grows. It uses
+
+$$
+\widehat M_\infty=M_N+\frac{(\log N)^{p+1}}{-p-1},
+\qquad
+\widehat V_\infty=V_N-2(\log N)^{2p}.
+$$
+
+The mean correction has error $O((\log N)^p/N)$ by integral comparison.
+For the variance, integration by parts gives
+$W_{n-1}=n(\log n)^p\{1-p/\log n+O((\log n)^{-2})\}$.
+Substitution into (8) and summation of the tail give
+$V_\infty-V_N=-2(\log N)^{2p}
++O((\log N)^{2p-1})$.
+The comparisons show numerical stability across these truncations;
+the approximations are not certified error bounds.
+
+```{r limit-table}
+kable(limit_table07, format = "latex", booktabs = TRUE, digits = 6, label = NA,
+      col.names = c("$p$", "$N$", "$\\widehat M_\\infty$",
+                    "$\\widehat V_\\infty$", "$\\widehat R_\\infty$"),
+      escape = FALSE,
+      caption = "Truncation stability of tail-corrected positive-ratio limits.") |>
+  kable_styling(latex_options = "hold_position", font_size = 9)
+```
+
+\FloatBarrier
+
+## How do these weights compare with a small positive power?
+
+Figure 5 compares three slowly growing weights with $i^{0.01}$ from
+Analysis 06.
+Its ratio has the positive limit $2(0.01)^2/1.01\approx0.000198$.
+The dashed limiting value lies far below the power-weight curve at the
+sample sizes shown. The logarithmic ratios eventually fall below that
+positive limit because they go to zero, but the figure does not show
+where the curves cross. A positive ratio limit for the power weight
+still says nothing decisive about its limiting wrong-selection probability.
+
+```{r reference-plot, fig.height=4.1, fig.cap="Slowly varying weights compared with the small positive power from Analysis 06."}
+reference_plot07
+```
+
+\newpage
+
+# Conclusions by weight family
+
+## Baseline: $w_i=1$
+
+For the unweighted score,
+
+$$
+M_n\sim\log n,
+\qquad
+V_n\to\pi^2,
+\qquad
+R_n\sim\frac{\pi^2}{(\log n)^2}\to0.
+$$
+
+The unweighted baseline is consistent. The mean signal continues to grow
+while the variance stays bounded. In the log-power family, $p=0$ is a
+special variance regime.
+
+## Increasing log-power weights: $p>0$
+
+For $w_i=[\log(i+1)]^p$ with $p>0$,
+
+$$
+M_n\sim\frac{(\log n)^{p+1}}{p+1},
+\qquad
+V_n\sim2(\log n)^{2p},
+\qquad
+R_n\sim\frac{2(p+1)^2}{(\log n)^2}\to0.
+$$
+
+The tested cases are
+
+$$
+p=1:\quad w_i=\log(i+1),
+\qquad R_n\sim\frac8{(\log n)^2},
+$$
+
+and
+
+$$
+p=2:\quad w_i=[\log(i+1)]^2,
+\qquad R_n\sim\frac{18}{(\log n)^2}.
+$$
+
+Every fixed positive log power tested here is consistent. On the increasing
+side of this family, no Chebyshev-ratio consistency boundary appears.
+
+**Rule:** Both mean and variance grow, but the squared mean grows two powers
+of $\log n$ faster than the variance.
+
+## Decreasing log-power weights: $p<0$
+
+### Slowly decreasing weights: $-1<p<0$
+
+Here
+
+$$
+M_n\sim\frac{(\log n)^{p+1}}{p+1}\to\infty,
+\qquad
+V_n\to V_\infty(p)<\infty,
+\qquad
+R_n\to0.
+$$
+
+Slowly decreasing weights are still consistent, so increasing weights are
+not necessary. One example is
+
+$$
+p=-\frac12:\qquad w_i=\frac1{\sqrt{\log(i+1)}}.
+$$
+
+### Boundary weight: $p=-1$
+
+For the tested weight $w_i=1/\log(i+1)$,
+
+$$
+M_n\sim\log\log n\to\infty,
+\qquad
+V_n\to V_\infty(-1),
+\qquad
+R_n\asymp\frac1{(\log\log n)^2}\to0.
+$$
+
+Reciprocal log is consistent, although its ratio goes to zero very slowly.
+
+### Faster decreasing weights: $p<-1$
+
+In this range,
+
+$$
+M_n\to M_\infty(p)>0,
+\qquad
+V_n\to V_\infty(p)>0,
+\qquad
+R_n\to\frac{V_\infty(p)}{M_\infty(p)^2}>0.
+$$
+
+The tested example is
+
+$$
+p=-2:\qquad w_i=\frac1{[\log(i+1)]^2}.
+$$
+
+The total mean signal stops growing, so the Chebyshev ratio no longer
+vanishes. This does not prove inconsistency; it only means that the
+Chebyshev bound no longer proves consistency.
+
+\pagebreak
+
+Therefore,
+
+$$
+\boxed{p=-1\text{ is the Chebyshev-ratio boundary for }[\log(i+1)]^p.}
+$$
+
+**Rule:** Decreasing weights can still work if they decrease slowly enough.
+The boundary occurs when the mean changes from diverging to converging.
+
+## Polynomial of log
+
+The tested polynomial is
+
+$$
+w_i=1+\log(i+1)+[\log(i+1)]^2.
+$$
+
+More generally, if
+
+$$
+P(x)=cx^k+\text{lower-order terms},
+\qquad c>0,\quad k\geq1,
+$$
+
+then $P(\log(i+1))\sim c[\log(i+1)]^k$. Consequently,
+
+$$
+M_n\sim\frac{c}{k+1}(\log n)^{k+1},
+\qquad
+V_n\sim2c^2(\log n)^{2k},
+\qquad
+R_n\sim\frac{2(k+1)^2}{(\log n)^2}\to0.
+$$
+
+For the tested degree-two polynomial, $k=2$ and $c=1$, so
+$R_n\sim18/(\log n)^2$. The tested polynomial is consistent.
+
+**Rule:** A positive polynomial of $\log i$ is controlled asymptotically by
+its highest-degree term. A degree-$k$ polynomial behaves like the log-power
+case $p=k$.
+
+## Log-log weight
+
+For $w_i=\log\log(i+e)$,
+
+$$
+M_n\sim(\log n)\log\log n,
+\qquad
+V_n\sim2(\log\log n)^2,
+\qquad
+R_n\sim\frac2{(\log n)^2}\to0.
+$$
+
+The log-log weight is consistent even though it grows more slowly than
+$\log i$.
+
+**Rule:** Very slow increasing growth can still be enough; strongly
+increasing weights are not necessary.
+
+## Overall rules from Analysis 07
+
+1. For $w_i=[\log(i+1)]^p$, the Chebyshev-ratio boundary is $p=-1$.
+2. Every fixed $p>0$ considered here gives consistency.
+3. The range $-1\leq p<0$ is also consistent, so weights need not increase.
+4. For $p<-1$, both mean and variance converge to positive constants and the
+   ratio has a positive limit. The Chebyshev argument is then inconclusive.
+5. A polynomial $P(\log(i+1))$ is controlled by its highest-degree term:
+   $P(\log(i+1))\sim c[\log(i+1)]^k$. Thus degree $k$ behaves like $p=k$.
+6. The log-log weight is consistent, with
+   $R_n\sim2/(\log n)^2\to0$.
+
+The main lesson is that consistency is not determined simply by whether the
+weights increase or decrease. In this Chebyshev argument, what matters is
+whether the accumulated mean signal becomes large enough relative to the
+score's standard deviation.
