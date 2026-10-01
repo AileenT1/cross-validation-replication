@@ -1,7 +1,7 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
-\usepackage{booktabs,array}
+\usepackage{booktabs,array,float}
 \newtheorem{theorem}{Theorem}[section]
 
 \title{Increasing Logarithmic Weights for Rolling Validation: Theory}
@@ -11,23 +11,32 @@
 \begin{document}
 \maketitle
 
-\section{Setting and goal}
+\section{Introduction and research question}
 
-This report studies increasing logarithmic-type weights for rolling
-validation in a Gaussian oracle-versus-mean comparison.  The goal is to
-understand how increasing weights affect both the expected rolling-validation
-signal and its variability, as a step toward useful growth conditions for
-weighting sequences.  Decreasing weights are outside the current research
-direction.  Finite-sample behavior is studied separately in the accompanying
-report, \emph{Increasing Logarithmic Weights for Rolling Validation:
-Simulation Study} (08B).
+Ordinary rolling validation adds validation losses across successive
+validation times.  Here later observations receive larger weights.  The
+question is how this changes the expected advantage of one model, the
+variability of that comparison, and the probability of selecting the wrong
+model.  In particular, we ask which forms of increasing logarithmic growth
+still allow weighted rolling validation to favor the oracle consistently.
+The companion report, \emph{Increasing Logarithmic Weights for Rolling
+Validation: Simulation Study} (08B), examines the finite-sample behavior.
+
+\subsection{Statistical setting}
 
 Let $Y_i=\theta_\star+\xi_i$, where
 $\xi_i\stackrel{\mathrm{iid}}{\sim}N(0,1)$.  At validation time $i$, compare
-the oracle $\widehat\theta_{i-1}^{(1)}=\theta_\star$ with the fitted mean
+Model 1, the oracle $\widehat\theta_{i-1}^{(1)}=\theta_\star$, with Model 0,
+the fitted mean
 \[
 \widehat\theta_{i-1}^{(0)}=\frac{1}{i-1}\sum_{t=1}^{i-1}Y_t.
 \]
+Model 1 uses the true parameter, while Model 0 estimates it from the
+observations available before time $i$.  This comparison isolates the
+finite-sample cost of estimation in a simple setting.
+
+\subsection{Weighted rolling-validation statistic and selection criterion}
+
 For positive deterministic weights $w_i$, define
 \begin{equation}
 \Xi_n=\sum_{i=2}^n w_i\left[
@@ -35,10 +44,14 @@ For positive deterministic weights $w_i$, define
 -\bigl(Y_i-\widehat\theta_{i-1}^{(1)}\bigr)^2\right].
 \label{eq:statistic}
 \end{equation}
-A positive value favors the oracle.  Thus $\Xi_n<0$ is incorrect selection,
-and selection consistency means $\mathbb P(\Xi_n<0)\to0$.
+A positive $\Xi_n$ means Model 0 has the larger weighted loss, so the oracle
+is selected.  A negative $\Xi_n$ favors Model 0 and is therefore an incorrect
+selection.  Selection consistency means $\mathbb P(\Xi_n<0)\to0$.
 
-\subsection{Core quantities and selection criterion}
+We study each weight through three quantities: $\mathbb E[\Xi_n]$, the
+accumulated signal favoring the oracle; $\operatorname{Var}(\Xi_n)$, the
+variability of that comparison; and their ratio
+$\operatorname{Var}(\Xi_n)/\{\mathbb E[\Xi_n]\}^2$.
 
 \paragraph{Expected signal.}
 For any positive deterministic weights,
@@ -61,13 +74,16 @@ Since $\mathbb E[\Xi_n]>0$,
 \leq\frac{\operatorname{Var}(\Xi_n)}{\{\mathbb E[\Xi_n]\}^2}.
 \label{eq:chebyshev}
 \end{equation}
-Accordingly, each candidate weight is treated in three steps: derive the
-expectation, derive the variance, and check whether the Chebyshev ratio tends
-to zero.
+Thus the common three-step calculation is to find the mean, find the
+variance, and test whether their Chebyshev ratio tends to zero.  A vanishing
+ratio is sufficient for the wrong-selection probability to vanish.
 
 \subsection{Candidate weights}
 
-\begin{table}[ht]
+We compare four increasing weights with $w_i=1$, which serves only as an
+unweighted baseline and is not part of the increasing-weight family.
+
+\begin{table}[H]
 \centering
 \begin{tabular}{@{}ll@{}}
 \toprule
@@ -109,6 +125,7 @@ and
 Hence every fixed $p>0$ gives selection consistency.
 \end{theorem}
 
+For every fixed $p>0$, the ratio has order $(\log n)^{-2}$ and tends to zero.
 Weighting increases both signal and variance, but the squared mean grows two
 powers of $\log n$ faster.  The full proof is given in Appendix~B.
 
@@ -156,9 +173,10 @@ and
 \]
 \end{theorem}
 
-The highest-degree logarithmic term determines the leading behavior.  Thus
+The lower-degree terms grow more slowly than the leading $c[\log(i+1)]^k$
+term, so they do not change the leading mean or variance.  In particular,
 $1+\log(i+1)+[\log(i+1)]^2$ has the same leading asymptotics as
-$[\log(i+1)]^2$.  See Appendix~C.1 for the proof and 08B, Sections 3--5 for
+$[\log(i+1)]^2$.  See Appendix~C for the proof and 08B, Sections 3--5 for
 the finite-sample comparison.
 
 \section{The log-log weight}
@@ -185,12 +203,12 @@ and
 \end{theorem}
 
 Even this extremely slow increase is sufficient in the present example.
-The proof is in Appendix~C.2, and the matching finite-sample evidence is in
+The proof is in Appendix~D, and the matching finite-sample evidence is in
 08B, Sections 3--5.
 
 \section{Theory summary}
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -225,10 +243,15 @@ polynomial-log weights, the highest-degree term determines the leading
 behavior.  The log-log result shows that even extremely slow increasing
 growth can be sufficient.
 
-The relevant property is not simply that the weights increase, but whether
-the accumulated weighted signal grows sufficiently fast relative to the
-standard deviation of $\Xi_n$.  The accompanying 08B report checks how
-clearly these asymptotic predictions appear at finite sample sizes.
+The signal must grow sufficiently fast relative to its standard deviation:
+\[
+\frac{\sqrt{\operatorname{Var}(\Xi_n)}}{\mathbb E[\Xi_n]}\longrightarrow0,
+\qquad\text{equivalently}\qquad
+\frac{\operatorname{Var}(\Xi_n)}{\{\mathbb E[\Xi_n]\}^2}\longrightarrow0.
+\]
+This signal-versus-noise condition is what makes the Chebyshev consistency
+argument work.  The accompanying 08B report checks how clearly these
+asymptotic predictions appear at finite sample sizes.
 
 \clearpage
 \appendix
@@ -348,9 +371,7 @@ order.  Therefore
 Dividing by the squared mean completes the proof.
 \end{proof}
 
-\section{Proofs for extensions}
-
-\subsection{Polynomial-log weight}
+\section{Polynomial-log extension}
 \begin{proof}[Proof of Theorem~\ref{thm:poly}]
 Since $P(x)=cx^k+O(x^{k-1})$,
 \[
@@ -372,7 +393,7 @@ order by Cauchy--Schwarz.  The bounded diagonal term is also lower order, so
 \]
 \end{proof}
 
-\subsection{Log-log weight}
+\section{Log-log extension}
 \begin{proof}[Proof of Theorem~\ref{thm:loglog}]
 Integral comparison and $u=\log x$ give
 \[

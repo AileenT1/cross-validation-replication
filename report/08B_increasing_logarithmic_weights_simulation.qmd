@@ -5,6 +5,7 @@ execute:
   dir: project
 format:
   pdf:
+    number-sections: true
     fig-width: 7.2
     fig-height: 4.6
     include-in-header:
@@ -103,9 +104,12 @@ schemes. This report examines whether those patterns are visible at finite
 sample sizes and whether the empirical wrong-selection probability decreases
 accordingly.
 
-The notation and sign convention match 08A. The statistic is denoted by
-$\Xi_n$; a positive value favors the oracle, and $\Xi_n<0$ is incorrect
-selection. The weights appear throughout in the same order:
+For $Y_i=\theta_\star+\xi_i$ with independent standard Gaussian
+$\xi_i$, 08A compares the pre-validation sample mean with the oracle
+$\theta_\star$. Write $\Xi_n$ for the weighted difference between their
+squared validation losses. A positive value favors the oracle, whereas
+$\Xi_n<0$ is an incorrect selection. The weights appear throughout in the
+same order:
 
 1. $1$;
 2. $\log(i+1)$;
@@ -113,11 +117,13 @@ selection. The weights appear throughout in the same order:
 4. $1+\log(i+1)+[\log(i+1)]^2$;
 5. $\log\log(i+e)$.
 
+The unweighted choice is a reference case. The remaining four weights
+increase, at different rates.
+
 # Simulation design
 
-The simulation design and cached results are inherited from the authoritative
-07 analysis, with the decreasing weights removed from this report. There are
-5,000 independent replications, seed 2026, processed in batches of 250. The
+The validated cached experiment contains 5,000 independent replications,
+seed 2026, processed in batches of 250. The
 sample sizes are
 $100,200,500,1000,2000,5000,10000,20000,50000,100000$.
 Each Gaussian path is reused across weights and sample sizes, so comparisons
@@ -129,8 +135,9 @@ The original implementation checks the quadratic-form representation, exact
 moments, direct score calculations, and the variance recurrence. The largest
 absolute discrepancy across these checks is
 `r format(max(results08$validation$max_absolute_error), scientific = TRUE, digits = 2)`.
-No Monte Carlo experiment is rerun here; 08B reads the validated 07 cache and
-filters it to the five weights above.
+This report reads those cached results for the five weights above. The
+design fixes the comparison before examining the moment, ratio, and selection
+plots.
 
 ```{r design-table}
 design08 <- data.frame(
@@ -140,69 +147,92 @@ design08 <- data.frame(
             "100 to 100,000 (10 specified sizes)",
             "50 to 10,000,000", "Across weights and sample sizes")
 )
-kable(design08, format = "latex", booktabs = TRUE,
-      caption = "Simulation design inherited from the authoritative 07 analysis.") |>
+kable(design08, format = "latex", booktabs = TRUE, label = NA,
+      caption = "Simulation design for the five weights.") |>
   kable_styling(latex_options = "hold_position")
 ```
 
-# Do empirical moments agree with theory?
+# Validation of theoretical moments
 
-The first check compares exact moments with Monte Carlo moments. Agreement
-supports both the theoretical formulas used in 08A and their numerical
-implementation. Separate vertical scales are used because the five weights
-produce moments of very different magnitudes.
+Before interpreting selection errors, we check whether simulated moments
+match the exact moments used in 08A. Separate vertical scales accommodate
+the different magnitudes of the five weights.
+
+## Expectation
+
+08A predicts mean growth of order $\log n$ for the baseline,
+$(\log n)^2$ and $(\log n)^3$ for the two log powers,
+$(\log n)^3$ for the polynomial, and
+$(\log n)\log\log n$ for the log-log weight. Figure 1 compares exact
+expectations with Monte Carlo means.
 
 ```{r mean-plot, fig.height=4.8, fig.cap="Exact and empirical expectations for the five weights."}
 mean_plot08
 ```
 
+The empirical points follow the exact curves across the simulated sizes.
+In particular, the polynomial and squared-log means approach the same
+leading scale, as the highest-degree-term result predicts.
+
+## Variance
+
+08A predicts variance tending to $\pi^2$ for the baseline, growing as
+$2(\log n)^2$ and $2(\log n)^4$ for the log powers and polynomial, and
+as $2(\log\log n)^2$ for the log-log weight. Figure 2 compares those exact
+variance trajectories with empirical variances.
+
 ```{r variance-plot, fig.height=4.8, fig.cap="Exact and empirical variances for the five weights."}
 variance_plot08
 ```
 
-Across the displayed sample sizes, the empirical means closely follow the
-exact expectations. Empirical variances fluctuate more because they estimate
-a second moment, but they track the exact variance trajectories. The
-polynomial-log moments grow on the same leading scale as the squared-log
-moments, as predicted by the highest-degree-term result in 08A.
+The empirical variances fluctuate more than the means but track the exact
+curves. The squared-log and polynomial cases show much larger variability
+over this range, even though their leading asymptotic forms agree. These
+moment checks support the calculations used in 08A and lead to the ratio
+comparison below.
 
-# Does the Chebyshev ratio follow the prediction?
+# Chebyshev ratio
 
-The theory in 08A predicts a vanishing Chebyshev ratio for all five weights.
-The blue curves below are the exact ratios. The orange points replace the
-exact variance by the Monte Carlo variance while retaining the exact mean in
-the denominator.
+08A predicts a ratio asymptotic to a weight-specific constant divided by
+$(\log n)^2$ for each choice. Figure 3 examines whether that downward
+pattern is visible at finite $n$. The blue curves use exact moments; the
+orange points use the Monte Carlo variance and exact mean.
 
 ```{r ratio-plot, fig.height=4.8, fig.cap="Exact and empirical Chebyshev ratios."}
 ratio_plot08
 ```
 
-Every exact ratio decreases over the displayed range. The empirical points
-follow the same broad pattern. The squared-log and polynomial-log curves are
-similar but not identical at finite $n$; their agreement is asymptotic because
-the polynomial contains lower-degree terms. The log-log ratio also decreases,
-despite the exceptionally slow growth of its weights.
+Every exact ratio decreases over the displayed range, and the empirical
+points follow the same broad pattern. This is consistent with the predicted
+$(\log n)^{-2}$ asymptotic rate, though these finite curves alone do not
+establish that rate. The squared-log and polynomial-log curves remain
+different at finite $n$ because the polynomial contains lower-degree terms.
+The log-log ratio also decreases despite its very slow weight growth.
 
-# Does the wrong-selection frequency decrease?
+The ratio is a sufficient bound for consistency; the next section examines
+the actual selection errors separately.
 
-The wrong-selection frequency estimates the actual finite-sample probability
-$\mathbb P(\Xi_n<0)$. It is not the Chebyshev ratio. The ratio supplies a
-sufficient upper-bound argument for asymptotic consistency, whereas the
-frequency below directly records observed selection mistakes. Bars are
-pointwise 95% Wilson intervals.
+# Wrong-selection probability
+
+08A shows that the Chebyshev ratio tends to zero, which is sufficient for
+$\mathbb P(\Xi_n<0)\to0$. Figure 4 instead estimates that probability
+directly from the simulated fraction of incorrect selections. The ratio is
+a theoretical upper-bound quantity; the frequency measures actual
+finite-sample errors. Bars are pointwise 95% Wilson intervals.
 
 ```{r probability-plot, fig.height=4.8, fig.cap="Wrong-selection frequencies and pointwise Monte Carlo uncertainty."}
 probability_plot08
 ```
 
-Wrong-selection frequencies decline for every weight. The decline is slowest
-for the squared-log and polynomial-log choices over the simulated range,
-which is compatible with their larger finite-sample variability. The log and
-log-log weights also show decreasing error frequencies, while the unweighted
-case serves as a low-error reference.
+Wrong-selection frequencies decline for every weight, as the consistency
+results suggest. The rate of finite-sample improvement differs: the decline
+is slowest for the squared-log and polynomial-log choices over this range,
+consistent with their larger variability. The log and log-log frequencies
+also fall, while the unweighted case is a low-error reference. Thus faster
+weight growth does not automatically improve finite-sample selection.
 
 ```{r endpoint-table}
-kable(endpoint08, format = "latex", booktabs = TRUE, digits = 4,
+kable(endpoint08, format = "latex", booktabs = TRUE, digits = 4, label = NA,
       caption = "Exact moments, Monte Carlo moments, ratios, and wrong-selection frequencies at n = 100,000.") |>
   kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 7.5)
 ```
@@ -211,8 +241,14 @@ kable(endpoint08, format = "latex", booktabs = TRUE, digits = 4,
 
 # Weight-specific interpretation
 
-**Log weight.** The exact mean and variance grow on the scales predicted in
-08A, and both the Chebyshev ratio and wrong-selection frequency decline.
+The moment, ratio, and error plots can now be read together for each
+increasing weight.
+
+**Unweighted baseline.** The variance approaches a finite limit, and the
+wrong-selection frequency declines across the simulated sizes.
+
+**Log weight.** Its exact mean and variance grow on the scales predicted in
+08A, while both the Chebyshev ratio and wrong-selection frequency decline.
 
 **Squared-log weight.** The empirical moments follow the exact trajectories.
 The ratio and error frequency decrease more slowly at the available sample
@@ -228,11 +264,11 @@ of 08A.
 
 # Summary
 
-The simulations support the theoretical moment calculations for all five
-weights. Exact and empirical Chebyshev ratios decline, and the observed
-wrong-selection frequencies decrease across the simulated sample sizes. The
-squared-log and polynomial-log cases show slower finite-sample improvement,
-while the log-log case already exhibits the predicted downward behavior.
+Across the five weights, the empirical moments track the exact calculations,
+the ratios decline in the direction predicted by 08A, and wrong-selection
+frequencies decrease over the simulated sizes. The squared-log and
+polynomial-log cases improve more slowly at finite $n$, while the log-log
+case also shows the predicted downward behavior.
 
 These numerical results do not replace the asymptotic proofs in 08A. They
 show how the theoretical mechanisms appear at finite sample sizes and preserve
