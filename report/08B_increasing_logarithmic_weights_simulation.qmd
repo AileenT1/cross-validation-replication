@@ -1,0 +1,240 @@
+---
+title: "Increasing Logarithmic Weights for Rolling Validation: Simulation Study"
+author: "Aileen Tao"
+execute:
+  dir: project
+format:
+  pdf:
+    fig-width: 7.2
+    fig-height: 4.6
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \usepackage{placeins}
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+
+opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+               fig.pos = "H", out.width = "100%")
+here::i_am("report/08B_increasing_logarithmic_weights_simulation.qmd")
+
+results08 <- readRDS(here::here("data", "final", "07_slowly_varying_rv_results.rds"))
+weight_ids08 <- c("logp_0", "logp_1", "logp_2", "poly2", "loglog")
+weight_labels08 <- c(
+  "Unweighted: 1",
+  "Log: log(i+1)",
+  "Squared log: [log(i+1)]^2",
+  "Polynomial log",
+  "Log-log: log log(i+e)"
+)
+weight_key08 <- data.frame(weight_id = weight_ids08, label08 = weight_labels08)
+
+exact08 <- results08$exact |>
+  filter(weight_id %in% weight_ids08) |>
+  left_join(weight_key08, by = "weight_id") |>
+  mutate(label08 = factor(label08, levels = weight_labels08))
+
+mc08 <- results08$mc |>
+  filter(weight_id %in% weight_ids08) |>
+  left_join(results08$exact, by = c("weight_id", "n")) |>
+  left_join(weight_key08, by = "weight_id") |>
+  mutate(label08 = factor(label08, levels = weight_labels08),
+         empirical_ratio = variance_mc / mean^2)
+
+style08 <- theme_bw(base_size = 10) +
+  theme(legend.position = "bottom", strip.text = element_text(size = 8.5),
+        panel.grid.minor = element_blank(), plot.caption = element_text(hjust = 0))
+
+mean_plot08 <- ggplot(exact08, aes(n, mean)) +
+  geom_line(colour = "#2166AC", linewidth = 0.55) +
+  geom_point(data = mc08, aes(y = mean_mc), colour = "#B35806", size = 1.15) +
+  facet_wrap(~label08, ncol = 3, scales = "free_y") +
+  scale_x_log10() + scale_y_log10() +
+  labs(x = "Sample size n (log scale)", y = "Mean (log scale)",
+       caption = "Blue lines: exact expectations. Orange points: Monte Carlo means.") + style08
+
+variance_plot08 <- ggplot(exact08, aes(n, variance)) +
+  geom_line(colour = "#2166AC", linewidth = 0.55) +
+  geom_point(data = mc08, aes(y = variance_mc), colour = "#B35806", size = 1.15) +
+  facet_wrap(~label08, ncol = 3, scales = "free_y") +
+  scale_x_log10() + scale_y_log10() +
+  labs(x = "Sample size n (log scale)", y = "Variance (log scale)",
+       caption = "Blue lines: exact variances. Orange points: Monte Carlo variances.") + style08
+
+ratio_plot08 <- ggplot(exact08, aes(n, ratio)) +
+  geom_line(colour = "#2166AC", linewidth = 0.55) +
+  geom_point(data = mc08, aes(y = empirical_ratio), colour = "#B35806", size = 1.15) +
+  facet_wrap(~label08, ncol = 3, scales = "free_y") +
+  scale_x_log10() + scale_y_log10() +
+  labs(x = "Sample size n (log scale)", y = "Chebyshev ratio (log scale)",
+       caption = paste0("Blue lines: exact variance / exact mean squared. ",
+                        "Orange points: empirical variance / exact mean squared.")) + style08
+
+probability_plot08 <- ggplot(mc08, aes(n, p_wrong)) +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.07, colour = "#636363") +
+  geom_line(colour = "#2166AC", linewidth = 0.45) +
+  geom_point(colour = "#2166AC", size = 1.15) +
+  facet_wrap(~label08, ncol = 3, scales = "free_y") +
+  scale_x_log10() +
+  labs(x = "Sample size n (log scale)", y = "Estimated P(Xi[n] < 0)",
+       caption = paste0("Pointwise 95% Wilson intervals from 5,000 replications. ",
+                        "Shared paths make estimates across weights and n dependent.")) + style08
+
+endpoint08 <- mc08 |>
+  filter(n == max(results08$config$mc_n)) |>
+  transmute(Weight = as.character(label08),
+            `Exact mean` = mean, `MC mean` = mean_mc,
+            `Exact variance` = variance, `MC variance` = variance_mc,
+            `Exact ratio` = ratio, `Wrong-selection frequency` = p_wrong,
+            `Wilson lower` = lower, `Wilson upper` = upper)
+```
+
+# Purpose
+
+The companion theory report, *Increasing Logarithmic Weights for Rolling
+Validation: Theory* (08A), derives asymptotic expressions for the expectation,
+variance, and Chebyshev ratio of several increasing logarithmic weighting
+schemes. This report examines whether those patterns are visible at finite
+sample sizes and whether the empirical wrong-selection probability decreases
+accordingly.
+
+The notation and sign convention match 08A. The statistic is denoted by
+$\Xi_n$; a positive value favors the oracle, and $\Xi_n<0$ is incorrect
+selection. The weights appear throughout in the same order:
+
+1. $1$;
+2. $\log(i+1)$;
+3. $[\log(i+1)]^2$;
+4. $1+\log(i+1)+[\log(i+1)]^2$;
+5. $\log\log(i+e)$.
+
+# Simulation design
+
+The simulation design and cached results are inherited from the authoritative
+07 analysis, with the decreasing weights removed from this report. There are
+5,000 independent replications, seed 2026, processed in batches of 250. The
+sample sizes are
+$100,200,500,1000,2000,5000,10000,20000,50000,100000$.
+Each Gaussian path is reused across weights and sample sizes, so comparisons
+are dependent. Exact moment trajectories extend from $n=50$ through
+$10^7$ on an approximately log-spaced grid that includes the simulation
+sizes.
+
+The original implementation checks the quadratic-form representation, exact
+moments, direct score calculations, and the variance recurrence. The largest
+absolute discrepancy across these checks is
+`r format(max(results08$validation$max_absolute_error), scientific = TRUE, digits = 2)`.
+No Monte Carlo experiment is rerun here; 08B reads the validated 07 cache and
+filters it to the five weights above.
+
+```{r design-table}
+design08 <- data.frame(
+  Item = c("Replications", "Seed", "Batch size", "Simulation sample sizes",
+           "Exact-trajectory range", "Path reuse"),
+  Value = c("5,000", "2026", "250",
+            "100 to 100,000 (10 specified sizes)",
+            "50 to 10,000,000", "Across weights and sample sizes")
+)
+kable(design08, format = "latex", booktabs = TRUE,
+      caption = "Simulation design inherited from the authoritative 07 analysis.") |>
+  kable_styling(latex_options = "hold_position")
+```
+
+# Do empirical moments agree with theory?
+
+The first check compares exact moments with Monte Carlo moments. Agreement
+supports both the theoretical formulas used in 08A and their numerical
+implementation. Separate vertical scales are used because the five weights
+produce moments of very different magnitudes.
+
+```{r mean-plot, fig.height=4.8, fig.cap="Exact and empirical expectations for the five weights."}
+mean_plot08
+```
+
+```{r variance-plot, fig.height=4.8, fig.cap="Exact and empirical variances for the five weights."}
+variance_plot08
+```
+
+Across the displayed sample sizes, the empirical means closely follow the
+exact expectations. Empirical variances fluctuate more because they estimate
+a second moment, but they track the exact variance trajectories. The
+polynomial-log moments grow on the same leading scale as the squared-log
+moments, as predicted by the highest-degree-term result in 08A.
+
+# Does the Chebyshev ratio follow the prediction?
+
+The theory in 08A predicts a vanishing Chebyshev ratio for all five weights.
+The blue curves below are the exact ratios. The orange points replace the
+exact variance by the Monte Carlo variance while retaining the exact mean in
+the denominator.
+
+```{r ratio-plot, fig.height=4.8, fig.cap="Exact and empirical Chebyshev ratios."}
+ratio_plot08
+```
+
+Every exact ratio decreases over the displayed range. The empirical points
+follow the same broad pattern. The squared-log and polynomial-log curves are
+similar but not identical at finite $n$; their agreement is asymptotic because
+the polynomial contains lower-degree terms. The log-log ratio also decreases,
+despite the exceptionally slow growth of its weights.
+
+# Does the wrong-selection frequency decrease?
+
+The wrong-selection frequency estimates the actual finite-sample probability
+$\mathbb P(\Xi_n<0)$. It is not the Chebyshev ratio. The ratio supplies a
+sufficient upper-bound argument for asymptotic consistency, whereas the
+frequency below directly records observed selection mistakes. Bars are
+pointwise 95% Wilson intervals.
+
+```{r probability-plot, fig.height=4.8, fig.cap="Wrong-selection frequencies and pointwise Monte Carlo uncertainty."}
+probability_plot08
+```
+
+Wrong-selection frequencies decline for every weight. The decline is slowest
+for the squared-log and polynomial-log choices over the simulated range,
+which is compatible with their larger finite-sample variability. The log and
+log-log weights also show decreasing error frequencies, while the unweighted
+case serves as a low-error reference.
+
+```{r endpoint-table}
+kable(endpoint08, format = "latex", booktabs = TRUE, digits = 4,
+      caption = "Exact moments, Monte Carlo moments, ratios, and wrong-selection frequencies at n = 100,000.") |>
+  kable_styling(latex_options = c("hold_position", "scale_down"), font_size = 7.5)
+```
+
+\FloatBarrier
+
+# Weight-specific interpretation
+
+**Log weight.** The exact mean and variance grow on the scales predicted in
+08A, and both the Chebyshev ratio and wrong-selection frequency decline.
+
+**Squared-log weight.** The empirical moments follow the exact trajectories.
+The ratio and error frequency decrease more slowly at the available sample
+sizes than for the log weight, but the direction agrees with the theory.
+
+**Polynomial-log weight.** Its trajectories resemble those of squared log,
+while retaining visible finite-sample differences from the lower-degree
+terms. This is the expected approach to highest-degree-term dominance.
+
+**Log-log weight.** Both the ratio and wrong-selection frequency decline even
+though the weight grows extremely slowly, matching the qualitative conclusion
+of 08A.
+
+# Summary
+
+The simulations support the theoretical moment calculations for all five
+weights. Exact and empirical Chebyshev ratios decline, and the observed
+wrong-selection frequencies decrease across the simulated sample sizes. The
+squared-log and polynomial-log cases show slower finite-sample improvement,
+while the log-log case already exhibits the predicted downward behavior.
+
+These numerical results do not replace the asymptotic proofs in 08A. They
+show how the theoretical mechanisms appear at finite sample sizes and preserve
+the distinction between a sufficient Chebyshev argument and the directly
+observed wrong-selection frequency.

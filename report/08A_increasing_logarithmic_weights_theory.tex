@@ -1,0 +1,398 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs,array}
+\newtheorem{theorem}{Theorem}[section]
+
+\title{Increasing Logarithmic Weights for Rolling Validation: Theory}
+\author{Aileen Tao}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Setting and goal}
+
+This report studies increasing logarithmic-type weights for rolling
+validation in a Gaussian oracle-versus-mean comparison.  The goal is to
+understand how increasing weights affect both the expected rolling-validation
+signal and its variability, as a step toward useful growth conditions for
+weighting sequences.  Decreasing weights are outside the current research
+direction.  Finite-sample behavior is studied separately in the accompanying
+report, \emph{Increasing Logarithmic Weights for Rolling Validation:
+Simulation Study} (08B).
+
+Let $Y_i=\theta_\star+\xi_i$, where
+$\xi_i\stackrel{\mathrm{iid}}{\sim}N(0,1)$.  At validation time $i$, compare
+the oracle $\widehat\theta_{i-1}^{(1)}=\theta_\star$ with the fitted mean
+\[
+\widehat\theta_{i-1}^{(0)}=\frac{1}{i-1}\sum_{t=1}^{i-1}Y_t.
+\]
+For positive deterministic weights $w_i$, define
+\begin{equation}
+\Xi_n=\sum_{i=2}^n w_i\left[
+\bigl(Y_i-\widehat\theta_{i-1}^{(0)}\bigr)^2
+-\bigl(Y_i-\widehat\theta_{i-1}^{(1)}\bigr)^2\right].
+\label{eq:statistic}
+\end{equation}
+A positive value favors the oracle.  Thus $\Xi_n<0$ is incorrect selection,
+and selection consistency means $\mathbb P(\Xi_n<0)\to0$.
+
+\subsection{Core quantities and selection criterion}
+
+\paragraph{Expected signal.}
+For any positive deterministic weights,
+\begin{equation}
+\mathbb E[\Xi_n]=\sum_{i=2}^n\frac{w_i}{i-1}.
+\label{eq:mean}
+\end{equation}
+This is the accumulated deterministic advantage of the oracle under the
+chosen weighting sequence.
+
+\paragraph{Variability.}
+Successive validation terms share training observations, so their dependence
+must be retained.  The exact variance decomposition and its Gaussian
+orthogonality argument are given in Appendix~A.
+
+\paragraph{Chebyshev selection rule.}
+Since $\mathbb E[\Xi_n]>0$,
+\begin{equation}
+\mathbb P(\Xi_n<0)
+\leq\frac{\operatorname{Var}(\Xi_n)}{\{\mathbb E[\Xi_n]\}^2}.
+\label{eq:chebyshev}
+\end{equation}
+Accordingly, each candidate weight is treated in three steps: derive the
+expectation, derive the variance, and check whether the Chebyshev ratio tends
+to zero.
+
+\subsection{Candidate weights}
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+Weight & Why it is included \\
+\midrule
+$1$ & Unweighted baseline \\
+$\log(i+1)$ & Slowly increasing logarithmic weight \\
+$[\log(i+1)]^2$ & Stronger logarithmic growth \\
+$1+\log(i+1)+[\log(i+1)]^2$ & Polynomial-log case \\
+$\log\log(i+e)$ & Extremely slowly increasing case \\
+\bottomrule
+\end{tabular}
+\caption{Weights considered in 08A and 08B, in their common order.}
+\end{table}
+
+\section{Positive log-power weights}
+
+The family $w_i=[\log(i+1)]^p$, $p>0$, provides one framework for different
+logarithmic growth rates.  The exponent controls the relative emphasis on
+later validation observations.  The question is whether the extra
+variability from increasing weights is dominated by the accumulated signal.
+
+\begin{theorem}\label{thm:logpower}
+For every fixed $p>0$,
+\[
+\textnormal{Mean:}\qquad
+\mathbb E[\Xi_n]\sim\frac{(\log n)^{p+1}}{p+1},
+\]
+\[
+\textnormal{Variance:}\qquad
+\operatorname{Var}(\Xi_n)\sim2(\log n)^{2p},
+\]
+and
+\[
+\textnormal{Selection:}\qquad
+\frac{\operatorname{Var}(\Xi_n)}{\{\mathbb E[\Xi_n]\}^2}
+\sim\frac{2(p+1)^2}{(\log n)^2}\longrightarrow0.
+\]
+Hence every fixed $p>0$ gives selection consistency.
+\end{theorem}
+
+Weighting increases both signal and variance, but the squared mean grows two
+powers of $\log n$ faster.  The full proof is given in Appendix~B.
+
+\subsection{Two concrete choices}
+
+The log and squared-log weights are direct special cases.
+\begin{center}
+\begin{tabular}{@{}lcccl@{}}
+\toprule
+Weight & $\mathbb E[\Xi_n]$ & $\operatorname{Var}(\Xi_n)$
+& Chebyshev ratio & Selection \\
+\midrule
+$\log(i+1)$ & $\sim(\log n)^2/2$ & $\sim2(\log n)^2$
+& $\sim8/(\log n)^2$ & Consistent \\
+$[\log(i+1)]^2$ & $\sim(\log n)^3/3$ & $\sim2(\log n)^4$
+& $\sim18/(\log n)^2$ & Consistent \\
+\bottomrule
+\end{tabular}
+\end{center}
+Their finite-sample moments, ratios, and selection errors are examined in
+08B, Sections 3--5.
+
+\section{Polynomial-log weights}
+
+The positive log-power result suggests that the dominant growth rate may
+determine the asymptotic behavior.  This motivates a polynomial in
+$\log(i+1)$.
+
+\begin{theorem}\label{thm:poly}
+Suppose $w_i=P(\log(i+1))>0$, where
+$P(x)=cx^k+O(x^{k-1})$, $k\geq1$, and $c>0$.  Then
+\[
+\textnormal{Mean:}\qquad
+\mathbb E[\Xi_n]\sim\frac{c}{k+1}(\log n)^{k+1},
+\]
+\[
+\textnormal{Variance:}\qquad
+\operatorname{Var}(\Xi_n)\sim2c^2(\log n)^{2k},
+\]
+and
+\[
+\textnormal{Selection:}\qquad
+\frac{\operatorname{Var}(\Xi_n)}{\{\mathbb E[\Xi_n]\}^2}
+\sim\frac{2(k+1)^2}{(\log n)^2}\longrightarrow0.
+\]
+\end{theorem}
+
+The highest-degree logarithmic term determines the leading behavior.  Thus
+$1+\log(i+1)+[\log(i+1)]^2$ has the same leading asymptotics as
+$[\log(i+1)]^2$.  See Appendix~C.1 for the proof and 08B, Sections 3--5 for
+the finite-sample comparison.
+
+\section{The log-log weight}
+
+The weight $w_i=\log\log(i+e)$ tests whether an even more slowly increasing
+sequence can still give a vanishing Chebyshev ratio.
+
+\begin{theorem}\label{thm:loglog}
+For $w_i=\log\log(i+e)$,
+\[
+\textnormal{Mean:}\qquad
+\mathbb E[\Xi_n]\sim(\log n)\log\log n,
+\]
+\[
+\textnormal{Variance:}\qquad
+\operatorname{Var}(\Xi_n)\sim2(\log\log n)^2,
+\]
+and
+\[
+\textnormal{Selection:}\qquad
+\frac{\operatorname{Var}(\Xi_n)}{\{\mathbb E[\Xi_n]\}^2}
+\sim\frac{2}{(\log n)^2}\longrightarrow0.
+\]
+\end{theorem}
+
+Even this extremely slow increase is sufficient in the present example.
+The proof is in Appendix~C.2, and the matching finite-sample evidence is in
+08B, Sections 3--5.
+
+\section{Theory summary}
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.0cm}
+>{\raggedright\arraybackslash}p{2.8cm}
+>{\raggedright\arraybackslash}p{2.8cm}
+>{\raggedright\arraybackslash}p{3.0cm}
+>{\raggedright\arraybackslash}p{1.7cm}@{}}
+\toprule
+Weight & $\mathbb E[\Xi_n]$ & $\operatorname{Var}(\Xi_n)$
+& Chebyshev ratio & Selection \\
+\midrule
+$1$ & $\sim\log n$ & $\to\pi^2$ & $\sim\pi^2/(\log n)^2$ & Consistent \\
+$\log(i+1)$ & $\sim(\log n)^2/2$ & $\sim2(\log n)^2$
+& $\sim8/(\log n)^2$ & Consistent \\
+$[\log(i+1)]^2$ & $\sim(\log n)^3/3$ & $\sim2(\log n)^4$
+& $\sim18/(\log n)^2$ & Consistent \\
+$1+\log(i+1)+[\log(i+1)]^2$ & $\sim(\log n)^3/3$
+& $\sim2(\log n)^4$ & $\sim18/(\log n)^2$ & Consistent \\
+$\log\log(i+e)$ & $\sim(\log n)\log\log n$
+& $\sim2(\log\log n)^2$ & $\sim2/(\log n)^2$ & Consistent \\
+\bottomrule
+\end{tabular}
+\caption{Theoretical predictions examined in the accompanying simulation report.}
+\end{table}
+
+\section{Conclusion}
+
+Every fixed positive log-power weight considered here remains selection
+consistent because its accumulated signal dominates its variability.  For
+polynomial-log weights, the highest-degree term determines the leading
+behavior.  The log-log result shows that even extremely slow increasing
+growth can be sufficient.
+
+The relevant property is not simply that the weights increase, but whether
+the accumulated weighted signal grows sufficiently fast relative to the
+standard deviation of $\Xi_n$.  The accompanying 08B report checks how
+clearly these asymptotic predictions appear at finite sample sizes.
+
+\clearpage
+\appendix
+\section*{Appendix}
+
+\section{General mean and variance decomposition}
+
+Define $S_m=\sum_{t=1}^m\xi_t$.  Then
+\begin{equation}
+\Xi_n=\sum_{i=2}^n w_i\left\{
+\frac{S_{i-1}^2}{(i-1)^2}-2\xi_i\frac{S_{i-1}}{i-1}\right\}.
+\label{eq:expanded}
+\end{equation}
+Because $S_{i-1}$ is independent of $\xi_i$,
+$\mathbb E(\xi_iS_{i-1})=0$ and $\mathbb E(S_{i-1}^2)=i-1$, proving
+\eqref{eq:mean}.
+
+For $1\leq t<n$ and $2\leq l\leq n$, define
+\[
+a_{n,t}=\sum_{i=t+1}^n\frac{w_i}{(i-1)^2},\qquad
+b_{n,l}=\sum_{i=l+1}^n\frac{w_i}{(i-1)^2}-\frac{w_l}{l-1}.
+\]
+Expanding $S_{i-1}^2$ and collecting Gaussian monomials gives
+\begin{equation}
+\Xi_n-\mathbb E[\Xi_n]
+=\sum_{t=1}^{n-1}a_{n,t}(\xi_t^2-1)
++2\sum_{l=2}^n b_{n,l}\sum_{k<l}\xi_k\xi_l.
+\label{eq:decomp}
+\end{equation}
+The centered squares have variance $2$, and each product $\xi_k\xi_l$ has
+variance $1$.  Distinct terms are uncorrelated because some independent
+centered Gaussian variable appears to an odd power in every mixed product.
+There are $l-1$ products with larger index $l$.  Hence
+\begin{equation}
+\operatorname{Var}(\Xi_n)=2\sum_{t=1}^{n-1}a_{n,t}^2
++4\sum_{l=2}^n(l-1)b_{n,l}^2.
+\label{eq:variance}
+\end{equation}
+
+For the increasing weights below, define
+\[
+A_t=\sum_{i=t+1}^\infty\frac{w_i}{(i-1)^2},\qquad
+B_l=A_l-\frac{w_l}{l-1},\qquad T_n=A_n.
+\]
+Then $a_{n,t}=A_t-T_n$ and $b_{n,l}=B_l-T_n$ exactly.  The leading terms
+in $B_l$ cancel.
+
+\section{Proof for increasing log-power weights}
+
+\begin{proof}[Proof of Theorem~\ref{thm:logpower}]
+Replacing $[\log(i+1)]^p/(i-1)$ by $(\log i)^p/i$ changes the mean by a
+bounded amount.  With $u=\log x$, integral comparison gives
+\[
+\mathbb E[\Xi_n]\sim\int^n\frac{(\log x)^p}{x}\,dx
+=\frac{(\log n)^{p+1}}{p+1}.
+\]
+
+For $I_p(t)=\int_t^\infty(\log x)^p x^{-2}\,dx$, integration by parts gives
+$I_p(t)=(\log t)^p/t+pI_{p-1}(t)$.  Substituting $x=te^v$ shows
+$I_q(t)=O((\log t)^q/t)$ for fixed $q$.  Sum--integral comparison therefore
+yields
+\begin{equation}
+A_t\sim\frac{(\log t)^p}{t},\qquad
+T_n\sim\frac{(\log n)^p}{n}.
+\label{eq:tails}
+\end{equation}
+
+To expose the cancellation in $B_l$, replace $(i-1)^{-2}$ in $A_l$ by
+$[i(i-1)]^{-1}$; the error is $O((\log l)^p/l^2)$.  Summation by parts gives
+\[
+\sum_{i=l+1}^\infty\frac{w_i}{i(i-1)}
+=\frac{w_{l+1}}{l}+\sum_{i=l+2}^\infty\frac{w_i-w_{i-1}}{i-1}.
+\]
+The first term differs from $w_l/(l-1)$ by
+$O((\log l)^p/l^2+(\log l)^{p-1}/l^2)$, and the mean-value theorem gives
+$|w_i-w_{i-1}|\leq C_p(\log i)^{p-1}/i$.  Thus
+\begin{equation}
+|B_l|\leq C_p\left\{\frac{(\log l)^{p-1}}{l}
++\frac{(\log l)^p}{l^2}\right\}.
+\label{eq:Bbound}
+\end{equation}
+In particular, $\sum_tA_t^2<\infty$, so the diagonal part of
+\eqref{eq:variance} is bounded.
+
+For the nonterminal off-diagonal part,
+\[
+\sum_{l=2}^n(l-1)B_l^2
+=O\left(\sum_{l=2}^n\frac{(\log l)^{2p-2}}{l}\right).
+\]
+With $u=\log x$, the comparison integral is
+$\int^{\log n}u^{2p-2}\,du$.  It is bounded for $0<p<1/2$, of order
+$\log\log n$ for $p=1/2$, and of order $(\log n)^{2p-1}$ for $p>1/2$.
+In every case,
+\begin{equation}
+\sum_{l=2}^n(l-1)B_l^2=o((\log n)^{2p}).
+\label{eq:Blower}
+\end{equation}
+
+The terminal contribution satisfies
+\[
+T_n^2\sum_{l=2}^n(l-1)\sim\frac{(\log n)^{2p}}2.
+\]
+After expanding $(B_l-T_n)^2$, Cauchy--Schwarz bounds the cross term by
+\begin{align*}
+2\left|T_n\sum_{l=2}^n(l-1)B_l\right|
+&\leq2\left\{
+\left(\sum_{l=2}^n(l-1)B_l^2\right)
+\left(T_n^2\sum_{l=2}^n(l-1)\right)\right\}^{1/2}\\
+&=o((\log n)^{2p}).
+\end{align*}
+The bounded diagonal part, the $B_l^2$ part, and the cross term are lower
+order.  Therefore
+\[
+\operatorname{Var}(\Xi_n)
+\sim4T_n^2\sum_{l=2}^n(l-1)\sim2(\log n)^{2p}.
+\]
+Dividing by the squared mean completes the proof.
+\end{proof}
+
+\section{Proofs for extensions}
+
+\subsection{Polynomial-log weight}
+\begin{proof}[Proof of Theorem~\ref{thm:poly}]
+Since $P(x)=cx^k+O(x^{k-1})$,
+\[
+P(\log(i+1))=c[\log(i+1)]^k+O([\log(i+1)]^{k-1}).
+\]
+Integral comparison gives
+$\mathbb E[\Xi_n]=c(\log n)^{k+1}/(k+1)+O((\log n)^k)$.
+The tail argument above yields
+\[
+A_t\sim\frac{c(\log t)^k}{t},\qquad
+B_l=O\left(\frac{(\log l)^{k-1}}{l}+\frac{(\log l)^k}{l^2}\right).
+\]
+Hence $T_n\sim c(\log n)^k/n$,
+$\sum_{l=2}^n(l-1)B_l^2=O((\log n)^{2k-1})$, and the cross term is lower
+order by Cauchy--Schwarz.  The bounded diagonal term is also lower order, so
+\[
+\operatorname{Var}(\Xi_n)
+\sim4T_n^2\sum_{l=2}^n(l-1)\sim2c^2(\log n)^{2k}.
+\]
+\end{proof}
+
+\subsection{Log-log weight}
+\begin{proof}[Proof of Theorem~\ref{thm:loglog}]
+Integral comparison and $u=\log x$ give
+\[
+\mathbb E[\Xi_n]
+=\int^n\frac{\log\log x}{x}\,dx+O(1)
+=(\log n)\log\log n-\log n+O(1).
+\]
+The same tail comparison and summation by parts give
+\[
+A_t\sim\frac{\log\log t}{t},\qquad
+B_l=O\left(\frac1{l\log l}+\frac{\log\log l}{l^2}\right).
+\]
+Both $\sum_tA_t^2$ and $\sum_l(l-1)B_l^2$ converge, while
+$T_n\sim\log\log n/n$.  The cross term is lower order by Cauchy--Schwarz.
+Thus
+\[
+\operatorname{Var}(\Xi_n)
+\sim4T_n^2\sum_{l=2}^n(l-1)\sim2(\log\log n)^2,
+\]
+which proves the result.
+\end{proof}
+
+\end{document}
