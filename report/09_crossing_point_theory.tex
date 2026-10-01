@@ -1,7 +1,6 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
-\usepackage{booktabs,tabularx}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{proposition}[theorem]{Proposition}
 \title{Crossing-Point Analysis for Weighted Rolling Validation: Theory}
@@ -20,20 +19,10 @@ The two tasks are distinct. First, expected RV should change preference at appro
 
 Analysis 08 considered a sample mean against an oracle that was always better in population risk. It studied the mean and variance of the RV loss difference and whether their ratio gave a selection-consistency bound. There was no preference reversal, hence no crossing to align. The present model deliberately has a reversal. Its nonzero mean parameter also creates a new linear random term in RV, so its variance cannot be imported from 08 without calculation.
 
-\begin{center}\small
-\begin{tabularx}{\textwidth}{@{}p{.27\textwidth}p{.18\textwidth}X p{.13\textwidth}@{}}
-\toprule
-Question & Quantity & Main result & Proof\\
-\midrule
-Population crossing & $\Delta_R(n)$ & $n_{\rm pop}=\lfloor\theta^{-2}\rfloor+1$ & \ref{app:pop}\\
-Ordinary RV lag & $\Delta_{\rm RV}(n)$ & $n_{\rm RV}\sim\theta^{-2}\log(\theta^{-2})$ & \ref{app:ordinary-cross}\\
-Weight alignment & $A_n/W_n$ & $nA_n/W_n\to1$ is sufficient & \ref{app:alignment}\\
-Logarithmic weights & $A_n/W_n$ & No & \ref{app:logpower}, \ref{app:loglog}\\
-Geometric weights & $A_n/W_n$ & Yes & \ref{app:geometric}\\
-Near-crossing tradeoff & variance/mean$^2$ & No under the 09 conditions & \ref{app:obstruction}, \ref{app:full-var}\\
-\bottomrule
-\end{tabularx}
-\end{center}
+Analysis 09 therefore introduces a crossing model in which the population-preferred
+model changes with training size. The report first studies the population crossing
+and the later ordinary-RV crossing. It then asks whether weighting can align the
+expected RV crossing while retaining enough concentration for reliable selection.
 
 \section{The two comparisons studied in 09}
 
@@ -41,6 +30,13 @@ For models 0 and 1 trained on $n$ observations, write
 \[
 \Delta_R(n)=R_0(n)-R_1(n).
 \]
+The population-risk difference $\Delta_R(n)$ compares the two models only at the
+\emph{current} training size $n$. It is not accumulated over previous training
+sizes. By contrast, ordinary RV accumulates validation-loss differences from
+earlier training sizes. Its expected difference $\Delta_{\rm RV}(n)$ therefore
+contains historical contributions even after current population risk has
+changed its preferred model.
+
 A negative value favors Model 0, a positive value favors Model 1, and zero means equal population risks. If $RV_{k,w}(n)$ denotes Model $k$'s weighted RV loss through the validation time with $n$ training observations, write
 \[
 \Delta_w(n)=\mathbb E[RV_{0,w}(n)-RV_{1,w}(n)].
@@ -63,7 +59,8 @@ Model 0 predicts a new response using the training sample mean $\bar Y_n$; Model
 
 \subsection{Population prediction risk}
 
-Here $R_k(n)$ averages squared prediction loss over the training data and an independent new response. The exact crossing is as follows.
+Here $R_k(n)$ averages squared prediction loss over the training data and an
+independent new response. The exact crossing is as follows.
 
 \begin{theorem}[Population crossing]\label{thm:population}
 \[
@@ -72,16 +69,36 @@ R_0(n)=1+\frac1n,\qquad R_1(n)=1+\theta^2,\qquad
 \qquad n_{\rm pop}=\lfloor\theta^{-2}\rfloor+1.
 \]
 \end{theorem}
-The common $1$ is new-response noise. The remaining comparison is the sample mean's $1/n$ estimation variance against the zero predictor's permanent $\theta^2$ bias. The risks tie at $n=\theta^{-2}$ when that is an integer; the displayed index is the first \emph{strict} Model-0 preference. The calculation and equality case are proved in Appendix~\ref{app:pop}.
+\noindent\textbf{Interpretation.} The common $1$ is new-response noise.
+The comparison is between the sample mean's estimation variance and the
+zero predictor's squared bias. The displayed index is the first \emph{strict}
+Model-0 preference; an equality at $n=\theta^{-2}$ is a tie.
+
+\noindent\textbf{Proof.} See Appendix~\ref{app:pop}.
 
 \subsection{Why ordinary RV crosses late}
 
-At validation time $m+1$, Model 0 has only $m$ training observations. Its expected loss difference from Model 1 is $1/m-\theta^2$: positive early, negative after $m>\theta^{-2}$. Ordinary RV sums \emph{all} these contributions,
+At validation time $m+1$, Model 0 has been trained on $m$ observations. Its
+expected loss difference relative to Model 1 is $1/m-\theta^2$. Ordinary RV
+accumulates these one-time differences:
 \begin{equation}\label{eq:ordinary}
-\Delta_{\rm RV}(n)=\sum_{m=1}^n\left(\frac1m-\theta^2\right)=H_n-n\theta^2,
-\qquad H_n=\sum_{m=1}^n\frac1m.
+\Delta_{\rm RV}(n)=\sum_{m=1}^n\left(\frac1m-\theta^2\right).
 \end{equation}
-Even after current population risk favors Model 0, RV remembers the positive losses from early, noisy sample means. This delays its crossing.
+Define
+\[
+H_n=\sum_{m=1}^n\frac1m=1+\frac12+\frac13+\cdots+\frac1n.
+\]
+$H_n$ is the $n$-th harmonic number, and
+$\Delta_{\rm RV}(n)=H_n-n\theta^2$. Since $H_n\sim\log n$, positive
+contributions from early validation times accumulate approximately
+logarithmically. The one-time expectation and sum are derived in
+Appendix~\ref{app:ordinary-mean}.
+
+The distinction is temporal: $\Delta_R(n)$ compares population risks only
+at the current training size $n$, whereas $\Delta_{\rm RV}(n)$ is an
+accumulated expected comparison. After the current population risk begins
+to favor Model 0, ordinary RV can still favor Model 1 because its sum
+retains positive contributions from earlier, smaller training sizes.
 
 \begin{proposition}[Ordinary-RV lag]\label{prop:ordinary}
 As $\theta\to0$,
@@ -90,34 +107,69 @@ n_{\rm RV}\sim\theta^{-2}\log(\theta^{-2}),\qquad
 \frac{n_{\rm RV}}{n_{\rm pop}}\sim\log(\theta^{-2})\to\infty.
 \]
 \end{proposition}
-The one-time expectation is derived in Appendix~\ref{app:ordinary-mean}; the crossing asymptotic and integer bracketing are proved in Appendix~\ref{app:ordinary-cross}.
+\noindent\textbf{Interpretation.} The accumulated history delays the
+expected ordinary-RV crossing by a growing factor relative to the
+population crossing.
+
+\noindent\textbf{Proof.} See Appendix~\ref{app:ordinary-cross}.
 
 \section{Weighted RV and crossing alignment}
 
-The lag originates in accumulated early contributions. Increasing weights give more influence to later validations, which use larger training samples. For deterministic $w_i>0$, independent of the data, define
+The lag originates in accumulated early contributions. Increasing weights
+give more influence to later validations, which use larger training samples.
+For deterministic $w_i>0$, independent of the data, define the realized
+weighted-RV loss difference and its expectation by
 \[
 \Xi_{n,w}=\sum_{i=2}^{n+1}w_i\{(Y_i-\bar Y_{i-1})^2-Y_i^2\},
 \qquad \Delta_w(n)=\mathbb E[\Xi_{n,w}].
 \]
-The final validation prediction uses $n$ training observations. A negative statistic selects Model 0. Multiplying all weights by one positive constant changes neither sign nor crossing. The expected contribution at time $i$ is $d_i=(i-1)^{-1}-\theta^2$. Define
+A negative value selects Model 0. The final validation prediction uses
+$n$ training observations. Multiplying all weights by one positive
+constant changes neither sign nor crossing.
+
+At validation time $i$, the expected loss difference is
+\[
+d_i=\frac{1}{i-1}-\theta^2.
+\]
+Define the weighted historical reciprocal sum and the total weight:
 \[
 A_n=\sum_{i=2}^{n+1}\frac{w_i}{i-1},\qquad
 W_n=\sum_{i=2}^{n+1}w_i.
 \]
-Then
+The expected weighted-RV difference is
 \begin{equation}\label{eq:weighted-mean}
-\Delta_w(n)=\sum_{i=2}^{n+1}w_i d_i=A_n-\theta^2W_n.
+\Delta_w(n)=A_n-\theta^2W_n.
 \end{equation}
-This follows from the one-time loss calculation, without assuming validation losses are independent; Appendix~\ref{app:weighted-mean} gives the derivation.
+Here $A_n$ collects the estimation-variance terms from all validation
+times, while $\theta^2W_n$ collects the bias terms. The derivation of
+$d_i$ and \eqref{eq:weighted-mean} is in
+Appendix~\ref{app:weighted-mean}.
 
-Normalizing by $W_n$ makes $A_n/W_n$ the weighted average of the historical estimation-variance terms $1/(i-1)$. Population risk uses only the current value $1/n$. Their exact relationship is
+Normalizing by $W_n$ makes $A_n/W_n$ the weighted average of the
+historical reciprocal training sizes. Population risk uses only the
+current value $1/n$. Their exact relationship is
 \begin{equation}\label{eq:remainder}
 \frac{\Delta_w(n)}{W_n}
 =\Delta_R(n)+\left(\frac{A_n}{W_n}-\frac1n\right).
 \end{equation}
-The parenthesized correction is nonnegative, and strictly positive for $n>1$ with positive weights. It is precisely the historical-training-size effect that keeps the expected RV comparison behind current population risk. In particular, expected RV cannot cross before the population criterion. The identity and strictness are proved in Appendix~\ref{app:remainder}; monotonicity and existence of the weighted crossing are proved in Appendix~\ref{app:monotonicity}.
+The correction in parentheses is the effect of earlier training sizes.
+It is nonnegative, and strictly positive for $n>1$ with positive
+weights, so the expected weighted-RV crossing cannot precede the
+population crossing. The identity and this crossing order are proved
+in Appendix~\ref{app:remainder}; crossing monotonicity and existence
+are established in Appendix~\ref{app:monotonicity}.
 
-To imitate population risk near its moving crossing, $A_n/W_n$ should behave like $1/n$. This leads to a sufficient condition.
+The alignment question is visible by comparing
+\[
+\frac{\Delta_w(n)}{W_n}=\frac{A_n}{W_n}-\theta^2,
+\qquad
+\Delta_R(n)=\frac1n-\theta^2.
+\]
+Their only difference is $A_n/W_n$ versus $1/n$. To make the expected
+weighted comparison resemble the current population comparison near
+their moving crossing, the target is $A_n/W_n\sim1/n$, equivalently
+$nA_n/W_n\to1$. The next theorem gives this condition a precise
+crossing interpretation.
 
 \begin{theorem}[Sufficient crossing alignment]\label{thm:alignment}
 If the positive deterministic weights do not depend on $\theta$ and
@@ -130,40 +182,144 @@ then $n_{{\rm RV},w}$ exists for all sufficiently small nonzero $\theta$ and
 \qquad(\theta\to0).
 \]
 \end{theorem}
-Interpretation: the weighted average of reciprocal training sizes is asymptotically the reciprocal of the latest training size. This aligns the \emph{expected} sign changes; it says nothing yet about random fluctuations. The $\varepsilon$-bracketing proof is in Appendix~\ref{app:alignment}.
+\noindent\textbf{Interpretation.} If the weighted average of reciprocal
+training sizes approaches the latest reciprocal training size, the
+\emph{expected} weighted-RV crossing aligns with the population
+crossing. The theorem does not control random fluctuations.
+
+\noindent\textbf{Proof.} See Appendix~\ref{app:alignment}.
 
 \subsection{Representative weights}
 
-The following families illustrate the condition. For $w_i=[\log(i+1)]^p$, $p>0$, Appendix~\ref{app:logpower} proves
+Crossing alignment requires $A_n/W_n\sim1/n$, equivalently
+$nA_n/W_n\to1$. The following families show how different rates of
+weight growth affect this condition.
+
+\paragraph{Log-power weights.}
+Consider $w_i=[\log(i+1)]^p$ for $p>0$. These weights test whether a
+gradual emphasis on later observations can remove the lag. Appendix
+\ref{app:logpower} establishes
 \[
-\frac{A_n}{W_n}\sim\frac{\log n}{(p+1)n},\qquad
+\frac{A_n}{W_n}\sim\frac{\log n}{(p+1)n},
+\qquad
 \frac{n_{{\rm RV},w}}{n_{\rm pop}}
 \sim\frac{\log(\theta^{-2})}{p+1}.
 \]
-The cases $p=1$ and $p=2$ are the log and squared-log weights. Ordinary weights $w_i=1$ are $p=0$. For $w_i=\log\log(i+e)$, Appendix~\ref{app:loglog} proves $A_n/W_n\sim(\log n)/n$ and the ordinary-RV leading crossing ratio. All four fail \eqref{eq:alignment}: they reduce finite lags to different degrees but remain asymptotically late.
+The target is $1/n$, but the additional factor $\log n/(p+1)$
+diverges. These weights therefore fail alignment, and their crossing
+ratio diverges rather than tending to $1$. The case $p=0$ is ordinary
+unweighted RV, $p=1$ is the log weight, and $p=2$ is the squared-log
+weight. Increasing $p$ reduces the finite crossing lag without
+removing its asymptotic divergence. The full asymptotic derivation is
+in Appendix~\ref{app:logpower}.
 
-Geometric weights $w_i=q^i$, $q>1$, are a contrasting diagnostic. Appendix~\ref{app:geometric} proves $nA_n/W_n\to1$, so Theorem~\ref{thm:alignment} aligns their crossing ratio. The same appendix calculates $\sum w_i^2/W_n^2\to(q-1)/(q+1)$, showing how little averaging these weights retain.
+\paragraph{Log-log weight.}
+The slower-growing choice $w_i=\log\log(i+e)$ checks whether a gentler
+increase behaves differently. It satisfies
+\[
+\frac{A_n}{W_n}\sim\frac{\log n}{n}.
+\]
+This still exceeds the $1/n$ target by a factor of $\log n$.
+Although it grows much more slowly than log-power weights, it also
+fails asymptotic alignment: its crossing has the same leading lag
+ratio as ordinary RV. The derivation is in Appendix~\ref{app:loglog}.
+
+\paragraph{Geometric weights.}
+Consider $w_i=q^i$ for $q>1$. These weights grow much faster, so most
+of the total weight falls on the latest validation observations. Their
+training sizes are close to $n$, making their reciprocal training
+sizes close to $1/n$. Appendix~\ref{app:geometric} proves
+\[
+\frac{nA_n}{W_n}\to1.
+\]
+Thus geometric weights satisfy Theorem~\ref{thm:alignment}, and
+$n_{{\rm RV},w}/n_{\rm pop}\to1$: the \emph{expected} weighted-RV
+crossing aligns asymptotically with the population crossing. The
+same appendix calculates
+\[
+\frac{\sum_{i=2}^{n+1}w_i^2}{W_n^2}
+\to\frac{q-1}{q+1}>0.
+\]
+The geometric weights are highly concentrated on a small number of
+late validation times, so they achieve crossing alignment but retain
+relatively little averaging across validation observations.
+
+The representative weights reveal a contrast. Slowly increasing
+log-type weights spread weight across many validation times and
+reduce finite lags, but their historical average $A_n/W_n$ remains
+too large relative to $1/n$ for asymptotic alignment. Geometric
+weights align the crossing by concentrating on the latest times,
+which reduces averaging. This motivates the next section.
 
 \section{Randomness near the moving crossing}
 
-Alignment of \emph{expected} RV is only the first requirement. A realized RV statistic may still have the wrong sign. A standard sufficient concentration condition is
+The population crossing satisfies $n_{\rm pop}\sim\theta^{-2}$ as
+$\theta\to0$, so $n/n_{\rm pop}$ is approximately $n\theta^2$.
+The quantity $n\theta^2$ tells us where the current training size
+lies relative to the moving population crossing. Letting
+$\theta\to0$ sends that crossing to larger sample sizes, while
+requiring
 \[
-\frac{\operatorname{Var}(\Xi_{n,w})}{\{\mathbb E\Xi_{n,w}\}^2}\to0
+n\theta^2\to c\in(0,\infty)
 \]
-when the mean is nonzero: Chebyshev's inequality then controls the probability of a sign error relative to that mean. We ask whether this condition can accompany \eqref{eq:alignment}.
+keeps $n$ at a fixed relative position. Here $c<1$ is before the
+population crossing, $c=1$ is at its leading-order location, and
+$c>1$ is after it. This is the relevant regime because the research
+question asks whether weighted RV behaves correctly near the point
+where the population-preferred model changes. The precise sign
+calculation is in Appendix~\ref{app:scaling}.
 
-The relevant limit is $\theta\to0$ with $n\theta^2\to c\in(0,\infty)$. Since $n_{\rm pop}\sim\theta^{-2}$, $c$ locates $n$ relative to the moving population crossing: $c<1$ is before, $c>1$ after, and $c=1$ at its leading-order location. Appendix~\ref{app:scaling} gives the precise sign calculation.
+Crossing alignment concerns the expectation of weighted RV. The
+realized statistic $\Xi_{n,w}$ is random, so its variance also matters
+near the crossing. A sufficient Chebyshev concentration condition,
+when its mean is nonzero, is
+\[
+\frac{\operatorname{Var}(\Xi_{n,w})}
+{\{\mathbb E\Xi_{n,w}\}^2}\to0.
+\]
+This would control the probability of a sign error relative to the
+expected statistic.
 
-The new 09 model has a linear Gaussian noise term absent when $\theta=0$. The exact finite-$n$ decomposition is
+The 08 Gaussian toy model used $\theta=0$. Here
+$Y_i=\theta+\xi_i$ with $\theta\ne0$. Expanding a validation loss
+difference produces an additional linear Gaussian term
+$-2\theta\xi_i$. It vanishes when $\theta=0$, which is why it was
+absent in 08. After weighting and summing, its random contribution
+is $-2\theta\sum_{i=2}^{n+1}w_i\xi_i$, with variance
+$4\theta^2\sum_{i=2}^{n+1}w_i^2$. Concentrating weights on the latest
+times can improve alignment, but also makes this noise large relative
+to the squared total weight.
+
+The exact variance identity is
 \begin{equation}\label{eq:variance}
 \operatorname{Var}(\Xi_{n,w})
 =2\sum_{t=1}^{n}a_t^2+
 4\sum_{l=2}^{n+1}(l-1)b_l^2+
 4\theta^2\sum_{i=2}^{n+1}w_i^2,
 \end{equation}
-where the coefficient definitions and Gaussian orthogonality proof are in Appendix~\ref{app:full-var}. This is a new 09 identity, not an unverified transfer of the 08 variance formula.
+where $a_t=\sum_{m=t}^nw_{m+1}/m^2$ for $1\le t\le n$ and
+$b_l=\sum_{m=l}^nw_{m+1}/m^2-w_l/(l-1)$ for $2\le l\le n+1$,
+with empty sums set to zero. The first two terms describe quadratic
+Gaussian noise; the last is the new linear noise. The loss expansion
+and variance proof are entirely in Appendices~\ref{app:loss-expansion}
+and~\ref{app:full-var}.
 
-The mechanism of the tradeoff is direct. Alignment puts nearly all normalized weight near the latest validation times. That makes $A_n/W_n$ resemble $1/n$, but shrinks the effective number of validation observations. The linear noise term in \eqref{eq:variance} then prevents Chebyshev concentration.
+Crossing alignment requires increasing emphasis on the latest
+validation times, since only their reciprocal training sizes are
+close to the current population term $1/n$. Concentrating weight
+near the end reduces averaging across validation observations. The
+expected crossing may therefore align while the realized statistic
+remains too noisy near it. To describe the amount of averaging,
+consider
+\[
+\frac{\sum_{i=2}^{n+1}w_i^2}{W_n^2}.
+\]
+This measures concentration of the normalized weights: it is small
+when weight is spread across many observations and larger when only
+a few observations dominate. Its reciprocal is an effective number
+of observations. Thus divergence of
+$n\sum_iw_i^2/W_n^2$ means the effective amount of averaging is
+much smaller than order $n$.
 
 \begin{theorem}[Near-crossing obstruction]\label{thm:tradeoff}
 Under \eqref{eq:alignment},
@@ -176,19 +332,50 @@ For every sequence $\theta\to0$ and $n\theta^2\to c\in(0,\infty)\setminus\{1\}$,
 {\{\mathbb E\Xi_{n,w}\}^2}\longrightarrow\infty.
 \end{equation}
 \end{theorem}
-Thus in this 09 model the same positive deterministic weighting behavior that aligns crossings precludes a vanishing Chebyshev ratio on either fixed side of the moving crossing. This does \emph{not} establish a limiting wrong-selection probability. The full effective-weight and variance-lower-bound proof is in Appendix~\ref{app:obstruction}; the variance identity it uses is proved in Appendix~\ref{app:full-var}. At $c=1$, a zero mean makes the ratio undefined; the nonzero smaller-order case is treated in Appendix~\ref{app:boundary}.
+\noindent\textbf{Interpretation.} Near the moving crossing,
+alignment and Chebyshev concentration cannot hold simultaneously in
+this 09 model. Strong late weighting reduces averaging and makes the
+new linear Gaussian noise too large relative to the squared mean.
+The Chebyshev ratio therefore diverges rather than vanishes. This
+criterion does not determine the limiting wrong-selection probability.
+The complete proof and variance calculation are in
+Appendices~\ref{app:effective}--\ref{app:obstruction}
+and~\ref{app:loss-expansion}--\ref{app:full-var}.
 
-The logarithmic and log-log families illustrate a different failure: Appendix~\ref{app:slow-var} gives their near-crossing ratio order $(\log n)^{-2}$, but Appendix B shows their expected comparison remains positive for every fixed $c$. For $c>1$, this is concentration around the sign \emph{opposite} to current population preference. Geometric weights align but have a diverging near-crossing ratio, by Appendix~\ref{app:geometric} and Theorem~\ref{thm:tradeoff}. Neither family is uniformly better.
+\paragraph{Logarithmic and log-log weights.}
+These spread mass across more validation times and retain better
+averaging, but their expected crossings remain asymptotically late.
+For $c>1$, they can concentrate around an expected sign that
+disagrees with current population preference.
 
-At fixed $\theta\ne0$, $n\to\infty$ is a different regime. Appendix~\ref{app:stretched} proves that $w_i=\exp(i^\beta)$, $0<\beta<1$, satisfies alignment and a vanishing fixed-$\theta$ variance ratio because its effective window grows like $n^{1-\beta}$. Theorem~\ref{thm:tradeoff} still rules out a vanishing Chebyshev ratio near the moving crossing.
+\paragraph{Geometric weights.}
+These align the expected crossing by concentrating strongly on the
+latest validation times, but the same concentration causes the
+near-crossing Chebyshev ratio to diverge.
+
+For fixed $\theta\ne0$ and $n\to\infty$, some intermediate-growth
+weights can achieve both alignment and concentration, but this is a
+different and weaker regime than the moving-crossing problem.
 
 \section{What 09 establishes}
 
-The population crossing occurs at approximately $\theta^{-2}$; ordinary RV crosses later by a logarithmic factor. Weighted RV differs from current population risk by the explicit historical term in \eqref{eq:remainder}. The condition \eqref{eq:alignment} aligns expected crossings, but, in the same near-crossing regime, forces the Chebyshev ratio to diverge. Logarithmic weights retain averaging but not alignment; geometric weights align while concentrating weight too strongly. These statements concern expected comparisons and variance bounds, not a proved limiting selection-error probability.
+Analysis 09 shows that ordinary rolling validation changes model
+preference later than population risk because it accumulates
+information from earlier training sizes. Weighting can reduce this
+lag, and sufficiently concentrated late-stage weights can align the
+expected crossing with the population crossing. Near the moving
+crossing, however, such concentration reduces averaging and
+prevents the Chebyshev concentration condition from holding.
+In this model, the same positive deterministic weighting behavior
+cannot achieve both properties.
 
 \section{What remains open}
 
-The obstruction is specific to this model, positive deterministic weights, and the near-crossing Chebyshev criterion. It does not identify the limiting wrong-selection probability under aligned weights. A direct probability analysis, another validation design, or a different crossing model could lead to a distinct answer. Fixed-$\theta$ concentration under intermediate growth does not settle the moving-crossing question.
+The result is specific to the 09 model, positive deterministic
+weights, and the near-crossing Chebyshev argument. It does not
+determine the exact limiting wrong-selection probability. Future
+work could study that probability directly or examine other
+weighting schemes, validation designs, or crossing models.
 
 \appendix
 \section{Population risk and ordinary RV}
