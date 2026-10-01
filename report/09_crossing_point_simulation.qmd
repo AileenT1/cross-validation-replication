@@ -1,0 +1,204 @@
+---
+title: "Crossing-Point Analysis for Weighted Rolling Validation: Simulation Study"
+author: "Aileen Tao"
+execute:
+  dir: project
+format:
+  pdf:
+    number-sections: true
+    fig-width: 7.2
+    fig-height: 4.6
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \usepackage{placeins}
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      fig.pos = "H", out.width = "100%")
+here::i_am("report/09_crossing_point_simulation.qmd")
+source(here::here("code", "09_crossing_point_simulation.R"),
+       local = knitr::knit_global())
+```
+
+# Purpose and new model
+
+This report checks the new Analysis 09 crossing formulas at finite training
+sizes. The theory report supplies the proofs. The model is
+$Y_i\stackrel{\mathrm{iid}}{\sim}N(\theta,1)$, with
+$0<|\theta|<1$: Model 0 uses the sample mean of the available training
+data, while Model 1 always predicts zero. Model 1 is not an oracle here.
+Negative loss differences favor Model 0.
+
+The population comparison after $n$ training observations is
+$\Delta_R(n)=1/n-\theta^2$. Expected weighted rolling validation (RV)
+has the same sign as
+$$
+\frac{\Delta_w(n)}{W_n}
+=\frac{\sum_{i=2}^{n+1}w_i/(i-1)}
+       {\sum_{i=2}^{n+1}w_i}-\theta^2.
+$$
+The division by $W_n>0$ puts the curves on a comparable scale without
+changing a crossing. Ordinary RV is the unweighted reference; log,
+squared-log, and log-log weights come from 08; geometric weighting is a new
+09 diagnostic for crossing alignment. The order is fixed throughout.
+
+# Design and checks
+
+Exact formulas are evaluated for
+$|\theta|\in\{0.2,0.1,0.05,0.025\}$, with training sizes through 40,000.
+The geometric base is 1.05. At each population crossing, we examine
+$n/n_{\mathrm{pop}}$ near $0.75,1,1.25,2$. The source checks the direct
+squared-loss score against a Gaussian quadratic form, and checks its exact
+mean and variance; the largest discrepancy is
+`r format(results09$validation_error, scientific = TRUE, digits = 2)`.
+
+A separate Monte Carlo check uses 2,000 Gaussian paths at $\theta=0.1$,
+seed 2026, in batches of 200. Each path is reused across weights and
+training sizes. The code caches its output, so re-rendering does not repeat
+the experiment. Exact curves and Monte Carlo points are distinguished in
+every figure.
+
+```{r design-table}
+design09 <- data.frame(
+  Item = c("Gaussian mean magnitudes", "Exact maximum training size",
+           "Geometric base", "Monte Carlo theta", "Monte Carlo replications",
+           "Seed", "Batch size"),
+  Value = c("0.2, 0.1, 0.05, 0.025", "40,000", "1.05", "0.1",
+            "2,000", "2026", "200")
+)
+kable(design09, format = "latex", booktabs = TRUE, label = NA,
+      caption = "Analysis 09 calculation and simulation design.") |>
+  kable_styling(latex_options = "hold_position")
+```
+
+# Do expected RV and population risk cross together?
+
+The theory predicts that ordinary RV crosses late. Logarithmic weighting
+should shorten this lag without eliminating it asymptotically; geometric
+weighting should move the expected RV crossing close to the population
+crossing. Figure 1 compares the exact population and normalized expected RV
+differences at $\theta=0.1$. The grey dashed line marks the population
+crossing; the orange dotted line marks the expected RV crossing.
+
+```{r comparison-plot, fig.height=4.8, fig.cap="Exact population and expected weighted-RV loss differences at theta = 0.1. Vertical lines mark their crossings."}
+comparison09
+```
+
+Every weighted crossing is later than the population crossing. The log and
+squared-log weights cross earlier than ordinary RV, while geometric
+weighting is nearest at this parameter value. This is a crossing comparison,
+not a claim about random selection accuracy.
+
+Figure 2 tests the asymptotic direction by shrinking $|\theta|$. The
+crossing ratio is one for exact alignment; a ratio above one measures lag.
+
+```{r crossings-plot, fig.height=4.5, fig.cap="Exact expected-RV crossing ratios as the population crossing moves outward."}
+crossings_plot09
+```
+
+The geometric ratio approaches one over this grid. The logarithmic ratios
+rise, consistent with their theoretical logarithmic divergence. Faster
+growth within the two log-power examples reduces the lag's constant, not
+its asymptotic order.
+
+```{r crossings-table}
+crossing_display09 <- crossing09 |>
+  mutate(Weight = as.character(label),
+         Improvement = ifelse(weight == "unweighted", "Reference",
+                              ifelse(improves_over_unweighted, "Yes", "No"))) |>
+  select(`|theta|` = theta, Weight, `Population crossing` = n_pop,
+         `Expected RV crossing` = n_rv,
+         `Absolute difference` = difference,
+         `Crossing ratio` = crossing_ratio, Improvement)
+kable(crossing_display09, format = "latex", booktabs = TRUE,
+      label = NA, digits = 3,
+      caption = "Exact crossing indices and improvement relative to ordinary RV.") |>
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                font_size = 7.5)
+```
+
+\FloatBarrier
+
+# Does alignment retain enough averaging?
+
+Analysis 09 proves that, near the moving crossing, the sufficient
+alignment condition $nA_n/W_n\to1$ forces
+$n\sum w_i^2/W_n^2\to\infty$. The new linear Gaussian variance term
+then prevents a vanishing Chebyshev ratio on either fixed side
+$n/n_{\mathrm{pop}}\to c\ne1$. Figure 3 uses the **exact** 09 variance,
+including both quadratic and linear parts, at three values of $c$.
+The ratio at $c=1$ is omitted from this plot because the leading
+population difference is zero there.
+
+```{r tradeoff-plot, fig.height=4.5, fig.cap="Exact Chebyshev ratios on both sides of the moving population crossing."}
+tradeoff09
+```
+
+The log weights have small ratios over the shrinking-$\theta$ grid, but
+for $c>1$ their expected RV comparison still favors the wrong model.
+Geometric weighting approaches crossing alignment, but its ratio stays
+large and can be irregular at finite sizes near its own crossing.
+This figure illustrates the two distinct failures identified by the
+theory; it does not establish a limiting selection probability.
+
+The boundary $c=1$ is shown separately in the table below. Its
+finite-grid ratios are descriptive: an asymptotic ratio with an exactly
+zero mean would be undefined.
+
+```{r local-table}
+local_display09 <- local09 |>
+  filter(theta == 0.1, c_target %in% c(0.75, 1, 1.25, 2)) |>
+  mutate(Weight = as.character(label)) |>
+  select(`Target c` = c_target, Weight, n,
+         `Population difference` = delta_pop,
+         `Expected RV / W` = delta_expected,
+         `Quadratic variance / W^2` = variance_quadratic,
+         `Linear variance / W^2` = variance_linear)
+kable(local_display09, format = "latex", booktabs = TRUE,
+      label = NA, digits = 5,
+      caption = "Exact near-crossing means and variance components at theta = 0.1.") |>
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                font_size = 7)
+```
+
+\FloatBarrier
+
+# Monte Carlo check: expectation versus realized selection
+
+The same theoretical mean can be checked without treating simulated
+selection as a proof. Figure 4 compares exact normalized expected RV
+curves with Monte Carlo means from the shared paths.
+
+```{r mc-mean-plot, fig.height=4.8, fig.cap="Exact normalized expected RV differences (blue) and Monte Carlo means (orange) at theta = 0.1."}
+mc_mean_plot09
+```
+
+The empirical means follow the exact curves. Figure 5 asks a different
+question: how often does the realized RV score select Model 0?
+Pointwise bars use Monte Carlo standard errors; shared paths make
+comparisons across weights and sizes dependent.
+
+```{r mc-select-plot, fig.height=4.8, fig.cap="Monte Carlo frequency of selecting Model 0, with pointwise approximate 95% intervals."}
+mc_select_plot09
+```
+
+For $n/n_{\mathrm{pop}}>1$, population risk favors Model 0.
+Expected sign alignment and a realized selection frequency near one are
+different requirements. The plotted frequencies describe this finite
+experiment; no asymptotic probability claim is inferred from them.
+
+# What these calculations establish
+
+The exact crossing table and curves verify the finite-index formulas and
+illustrate the lag that general weighting changes. The exact variance
+calculations display the new linear noise term. Monte Carlo means support
+the expected RV calculation, while selection frequencies show the
+additional randomness faced by a realized criterion. The proofs and
+near-crossing impossibility statement are in the separate 09 theory
+report.
