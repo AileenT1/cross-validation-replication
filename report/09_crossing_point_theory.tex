@@ -211,12 +211,17 @@ different validation designs, weight classes, or crossing
 models remain possible directions.
 
 \appendix
+\section*{Appendix}
 \section{Population risk and ordinary RV}
 
 \subsection{Population-risk formulas and strict crossing}\label{app:pop}
+We compute both population risks and locate their first strict crossing. The calculation separates estimation variance from squared bias.
+
 Let $Y_{\rm new}=\theta+\xi_{\rm new}$ be independent of the training sample. Since $\bar Y_n=\theta+S_n/n$ with $S_n=\sum_{t=1}^n\xi_t$, the Model-0 error is $\xi_{\rm new}-S_n/n$. Independence, zero means, and $\operatorname{Var}(S_n)=n$ give $R_0(n)=1+1/n$. Model 1 has error $\theta+\xi_{\rm new}$, hence $R_1(n)=1+\theta^2$. Their difference is $1/n-\theta^2$, negative exactly when $n>\theta^{-2}$. The least integer strictly above $\theta^{-2}$ is $\lfloor\theta^{-2}\rfloor+1$, including when $\theta^{-2}$ itself is an integer (the equality index is a tie). This proves Theorem~\ref{thm:population}.
 
 \subsection{One-time and ordinary-RV expectation}\label{app:ordinary-mean}
+We derive the one-time expected loss difference and sum it to obtain the ordinary-RV mean. Independence of the fresh response makes the calculation direct.
+
 At time $m+1$, $\bar Y_m=\theta+S_m/m$ and the fresh error of Model 0 is $\xi_{m+1}-S_m/m$; that of Model 1 is $\theta+\xi_{m+1}$. Expanding and using independence of $\xi_{m+1}$ and $S_m$ gives
 \[
 \mathbb E[(Y_{m+1}-\bar Y_m)^2-Y_{m+1}^2]
@@ -225,7 +230,9 @@ At time $m+1$, $\bar Y_m=\theta+S_m/m$ and the fresh error of Model 0 is $\xi_{m
 Summing over $m=1,\ldots,n$ proves \eqref{eq:ordinary}.
 
 \subsection{Ordinary-RV crossing asymptotics}\label{app:ordinary-cross}
-Put $h=\theta^2$ and $N=h^{-1}$. The mean $H_n-nh$ has increments $1/(n+1)-h$, so it is initially increasing and eventually decreasing to $-\infty$; its first strict negative index exists and is unique. Integral bounds give $\log(n+1)\le H_n\le1+\log n$. Fix $\varepsilon\in(0,1)$ and set
+We use harmonic-number bounds to locate the first strict negative expected RV difference.
+
+Put $h=\theta^2$ and $N=h^{-1}$. The mean $H_n-nh$ has increments $1/(n+1)-h$, so it is initially increasing and eventually decreasing to $-\infty$; its first strict negative index exists and is unique. Integral bounds give $\log(n+1)\le H_n\le1+\log n$. To show that the crossing occurs near $N\log N$, we evaluate the expected difference at one point slightly below and one slightly above that scale. Fix $\varepsilon\in(0,1)$ and set
 \[
 n_-=\lfloor(1-\varepsilon)N\log N\rfloor,\qquad
 n_+=\lceil(1+\varepsilon)N\log N\rceil.
@@ -235,6 +242,8 @@ Both tend to infinity; $\log n_\pm=\log N+\log\log N+O(1)$, while $n_\pm h=(1\pm
 \section{Weighted RV and crossing alignment}
 
 \subsection{Weighted expectation}\label{app:weighted-mean}
+We derive the weighted expected RV difference from the one-time expectation. Linearity of expectation is enough, even though validation losses are dependent.
+
 Apply the one-time expectation in Appendix~\ref{app:ordinary-mean} with $m=i-1$. Deterministic weights and linearity of expectation give
 \[
 \Delta_w(n)=\sum_{i=2}^{n+1}w_i\bigl((i-1)^{-1}-\theta^2\bigr)
@@ -244,16 +253,22 @@ Apply the one-time expectation in Appendix~\ref{app:ordinary-mean} with $m=i-1$.
 No independence between validation losses is asserted or needed.
 
 \subsection{Exact remainder and crossing order}\label{app:remainder}
+We express the weighted RV comparison as current population risk plus a historical correction. Positivity of that correction gives the crossing order.
+
 Divide the preceding identity by $W_n>0$ and add and subtract $1/n$ to obtain \eqref{eq:remainder}. Each $1/(i-1)\ge1/n$. Their positive-weighted average therefore satisfies $A_n/W_n\ge1/n$; for $n>1$, at least one earlier term is strictly larger and has positive weight, so the inequality is strict. If $\Delta_R(n)\ge0$, then $\Delta_w(n)/W_n\ge0$. Consequently a strict weighted-RV crossing cannot precede $n_{\rm pop}$. Equality is possible at $n=1$ or if nonnegative (rather than positive) weights are supported only on the final term.
 
 \subsection{Monotonicity and crossing existence}\label{app:monotonicity}
+We show that the weighted historical reciprocal average decreases as validation times are added. This identifies when its first strict crossing exists.
+
 Write $r_n=A_n/W_n$. Adding the next validation time gives
 \[
 r_{n+1}=\frac{W_nr_n+w_{n+2}/(n+1)}{W_n+w_{n+2}}.
 \]
-Every term in $r_n$ is at least $1/n>1/(n+1)$, so $r_{n+1}<r_n$ for positive weights. Thus the equation $r_n<h$ has at most one first strict crossing. It exists exactly when $\inf_n r_n<h$; since $r_n$ decreases, this is equivalent to $\lim_n r_n<h$. If the limit equals $h$, strict crossing need not occur. Under \eqref{eq:alignment}, $r_n\sim1/n\to0$, so crossing exists for every fixed $h>0$; $r_1=1>h$ because $0<h<1$.
+Every term in $r_n$ is at least $1/n>1/(n+1)$, so $r_{n+1}<r_n$ for positive weights. Since $r_n$ is strictly decreasing, once $r_n<h$ occurs it remains below $h$. Therefore the first strict crossing, when it exists, is unique. It exists exactly when $\inf_n r_n<h$; since $r_n$ decreases, this is equivalent to $\lim_n r_n<h$. If the limit equals $h$, strict crossing need not occur. Under \eqref{eq:alignment}, $r_n\sim1/n\to0$, so crossing exists for every fixed $h>0$; $r_1=1>h$ because $0<h<1$.
 
 \subsection{Sufficient-alignment theorem}\label{app:alignment}
+The proof brackets the weighted-RV crossing between training sizes slightly below and slightly above the population crossing.
+
 Let $h=\theta^2\downarrow0$ and fix $\varepsilon\in(0,1)$. Set $n_-=\lfloor(1-\varepsilon)/h\rfloor$ and $n_+=\lceil(1+\varepsilon)/h\rceil$. Both grow, and \eqref{eq:alignment} gives $r_{n_\pm}=(1+o(1))/n_\pm$. Therefore
 \[
 \frac{r_{n_-}}h\to\frac1{1-\varepsilon}>1,\qquad
@@ -262,6 +277,8 @@ Let $h=\theta^2\downarrow0$ and fix $\varepsilon\in(0,1)$. Set $n_-=\lfloor(1-\v
 By Appendix~\ref{app:monotonicity}, the first strict crossing lies in $(n_-,n_+]$ for small $h$. Rounding changes either endpoint by at most one. Divide by $h^{-1}$ and let $\varepsilon\downarrow0$; since $n_{\rm pop}=h^{-1}+O(1)$, the crossing ratio tends to one. This proves Theorem~\ref{thm:alignment}.
 
 \subsection{Log-power weights and their crossings}\label{app:logpower}
+We first derive $A_n$ and $W_n$ for log-power weights, then use their ratio to locate the expected crossing.
+
 Let $w_i=[\log(i+1)]^p$ with fixed $p\ge0$. A shift by one changes $\log(i+1)$ by $O(1/i)$, so its $p$th power has the same leading order as $(\log i)^p$ (with $p=0$ interpreted as $1$). Integral comparison, or summation by parts, yields
 \[
 A_n\sim\int_2^n\frac{(\log x)^p}{x}\,dx
@@ -274,6 +291,8 @@ r_n\sim\frac{\log n}{(p+1)n}.
 For the crossing let $N=h^{-1}$ and $g_N=N\log N/(p+1)$. At $n_\pm=\lfloor(1\mp\varepsilon)g_N\rfloor$ and $\lceil(1\pm\varepsilon)g_N\rceil$, respectively, $\log n_\pm/\log N\to1$, so $r_{n_\pm}/h\to(1\mp\varepsilon)^{-1}$. Monotonicity from Appendix~\ref{app:monotonicity} brackets the first crossing between them. Letting $\varepsilon\downarrow0$ gives $n_{{\rm RV},w}\sim g_N$ and, since $n_{\rm pop}\sim N$, the ratio stated in the main text. This includes $p=0$.
 
 \subsection{Log-log weight}\label{app:loglog}
+We estimate $A_n$ and $W_n$ for the slower-growing log-log weight, then determine its crossing scale.
+
 Set $f(x)=\log\log(x+e)>0$. Its derivative is $f'(x)=1/[(x+e)\log(x+e)]$. For large $x$, $f(x)\sim\log\log x$ and $f(x)/x$ is decreasing, so integral comparison applies. The shift from $f(x)$ to $\log\log x$ produces an integrable error after division by $x$: the mean-value theorem bounds it by $C/(x^2\log x)$ for sufficiently large $x$. Substituting $u=\log x$,
 \[
 A_n=\int^n\frac{\log\log x}{x}\,dx+O(1)
@@ -283,6 +302,8 @@ A_n=\int^n\frac{\log\log x}{x}\,dx+O(1)
 The same last-fraction argument as in Appendix~\ref{app:logpower}, using $f(\delta n)/f(n)\to1$ for fixed $\delta>0$, gives $W_n\sim n\log\log n$. Hence $r_n\sim(\log n)/n$. Bracketing at $n_\pm=(1\pm\varepsilon)N\log N$ exactly as in Appendix~\ref{app:logpower} gives $n_{{\rm RV},w}\sim N\log N$ and $n_{{\rm RV},w}/n_{\rm pop}\sim\log N$.
 
 \subsection{Geometric-weight alignment and effective averaging}\label{app:geometric}
+We show that geometric weights align the expected crossing and calculate how concentrated their normalized weights remain.
+
 For $w_i=q^i$ with $q>1$, write $i=n+1-j$. Division by $W_n$ makes the lag $j$ have probabilities proportional to $q^{-j}$, $j=0,\ldots,n-1$. The denominator $\sum_{j=0}^{n-1}q^{-j}\to q/(q-1)$ and the numerator for $nr_n$ is
 \[
 \sum_{j=0}^{n-1}q^{-j}\frac{n}{n-j}.
@@ -297,9 +318,13 @@ Theorem~\ref{thm:alignment} supplies the crossing ratio; the displayed square-we
 \section{Near-crossing alignment--concentration obstruction}
 
 \subsection{The near-crossing scaling}\label{app:scaling}
+We relate $n\theta^2$ to the moving population crossing and establish the before/after sign interpretation.
+
 Put $h=\theta^2$. Theorem~\ref{thm:population} gives $n_{\rm pop}=h^{-1}+O(1)$. Thus $nh\to c$ places $n$ at asymptotic fraction $c$ of the population crossing. Moreover $n\Delta_R(n)=1-nh\to1-c$, proving the before/after sign interpretation for $c\ne1$.
 
 \subsection{Weight concentration and effective sample size}\label{app:effective}
+The alignment condition forces asymptotically almost all normalized weight toward the latest validation times. We first show this concentration, then use Cauchy--Schwarz to show that the effective amount of averaging must be small.
+
 Let $p_{n,i}=w_i/W_n$, so $\sum_i p_{n,i}=1$. Alignment is
 \[
 \sum_{i=2}^{n+1}p_{n,i}\left(\frac{n}{i-1}-1\right)\to0.
@@ -315,6 +340,8 @@ All summands are nonnegative. For fixed $\varepsilon\in(0,1)$ and $i-1\le(1-\var
 For any $K>0$, choose $\varepsilon<1/K$; the lower limit is then at least $K$. Thus $n\sum_i p_{n,i}^2\to\infty$.
 
 \subsection{Proof of the obstruction theorem}\label{app:obstruction}
+We now combine the forced weight concentration from Appendix~\ref{app:effective} with the new linear-noise variance lower bound.
+
 Under alignment, $r_n=(1+o(1))/n$. If $nh\to c\ne1$, then by \eqref{eq:weighted-mean}
 \[
 \frac{\mathbb E\Xi_{n,w}}{W_n}=r_n-h
@@ -332,11 +359,15 @@ Appendix~\ref{app:full-var} proves that the quadratic variance is nonnegative an
 by Appendix~\ref{app:effective}. The mean is positive when $c<1$ and negative when $c>1$, for sufficiently large $n$. The proof establishes failure of a sufficient Chebyshev argument, not a positive lower bound on wrong-selection probability. This proves Theorem~\ref{thm:tradeoff}.
 
 \subsection{The exact boundary}\label{app:boundary}
+The case $c=1$ needs separate treatment because the leading mean vanishes there. We check what happens when the smaller-order mean is zero or nonzero.
+
 If $nh\to1$ under alignment, $r_n-h=o(1/n)$. When this difference is zero, the variance-to-mean-squared ratio is undefined. When it is nonzero, the preceding lower bound has numerator $4h\sum p_{n,i}^2$ and denominator $o(n^{-2})$; writing $r_n-h=\delta_n/n$ with $\delta_n\to0$ gives a lower bound $4(1+o(1))n\sum p_{n,i}^2/\delta_n^2\to\infty$. No leading-order population sign is assigned at $c=1$.
 
 \section{Exact variance and a fixed-parameter comparison}
 
 \subsection{Loss expansion and centering}\label{app:loss-expansion}
+We expand one validation loss difference and identify the new linear term caused by $\theta\ne0$. Centering then isolates the quadratic and linear random parts.
+
 Write $S_m=\sum_{t=1}^m\xi_t$. Since $\bar Y_m=\theta+S_m/m$,
 \[
 (Y_{m+1}-\bar Y_m)^2-Y_{m+1}^2
@@ -352,6 +383,8 @@ Q_{n,w}=\sum_{m=1}^nw_{m+1}
 we have $\Xi_{n,w}-\mathbb E\Xi_{n,w}=Q_{n,w}-2\theta\sum_{i=2}^{n+1}w_i\xi_i$. This also independently verifies \eqref{eq:weighted-mean}.
 
 \subsection{Gaussian orthogonality and coefficients}\label{app:full-var}
+We collect the quadratic coefficients and use Gaussian orthogonality to obtain the exact variance. This separates quadratic noise from the new linear-noise variance.
+
 Expand $S_m^2-m=\sum_{t=1}^m(\xi_t^2-1)+2\sum_{1\le t<u\le m}\xi_t\xi_u$. Collecting each centered square gives coefficient
 \[
 a_t=\sum_{m=t}^n\frac{w_{m+1}}{m^2},\qquad 1\le t\le n.
@@ -382,13 +415,21 @@ Adding proves the exact finite-$n$ variance identity
 \end{equation}
 
 \subsection{Slow-weight variance orders}\label{app:slow-var}
+\paragraph{Step 1: Goal and weight class.}
+We determine the quadratic variance order for the unweighted, log-power, and log-log families, then combine it with the linear variance to obtain their Chebyshev-ratio order.
+
 Here $h=\theta^2$ and $nh\to c\in(0,\infty)$; consider $w_{m+1}=f(m)$, where $f(m)=1$, $[\log(m+2)]^p$ for fixed $p>0$, or $\log\log(m+1+e)$. In each case $f(n)$ is slowly varying, and splitting sums at $\delta n$ as in Appendix B shows
 \[
 \sum_{m=1}^n f(m)^2\sim nf(n)^2.
 \]
-We verify the quadratic order without borrowing it from 08. The coefficients $a_t$ are bounded by $\sum_{m=t}^\infty f(m)/m^2$. For the listed $f$, integral comparison and eventual monotonicity of $f(x)/x^{3/4}$ give $\sum_{m=t}^\infty f(m)/m^2\le C f(t)/t$ for large $t$. Consequently $\sum_t a_t^2\le C+C\sum_t f(t)^2/t^2=O(1)$.
+\paragraph{Step 2: Control the $a_t$-part.}
+We verify the quadratic order without borrowing it from 08. The coefficients $a_t$ are bounded by $\sum_{m=t}^\infty f(m)/m^2$. For the listed $f$, integral comparison and eventual monotonicity of $f(x)/x^{3/4}$ give $\sum_{m=t}^\infty f(m)/m^2\le C f(t)/t$ for large $t$. Consequently $\sum_t a_t^2\le C+C\sum_t f(t)^2/t^2=O(1)$. Thus the $a_t$-part stays bounded.
 
-Set $T_n=\sum_{m=n+1}^\infty f(m)/m^2$ and $B_l=\sum_{m=l}^\infty f(m)/m^2-f(l-1)/(l-1)$, so $b_l=B_l-T_n$ for $2\le l\le n$ and $b_{n+1}=-f(n)/n$ (the harmless one-step indexing changes the following estimates only by lower-order terms). Integral comparison, summation by parts, and the mean-value theorem give
+\paragraph{Step 3: Rewrite the $b_l$-part.}
+Set $T_n=\sum_{m=n+1}^\infty f(m)/m^2$ and $B_l=\sum_{m=l}^\infty f(m)/m^2-f(l-1)/(l-1)$, so $b_l=B_l-T_n$ for $2\le l\le n$ and $b_{n+1}=-f(n)/n$ (the harmless one-step indexing changes the following estimates only by lower-order terms). This separates the terminal contribution $T_n$ from the residual $B_l$.
+
+\paragraph{Step 4: Bound $B_l$.}
+Integral comparison, summation by parts, and the mean-value theorem give
 \[
 T_n\sim f(n)/n,\qquad
 |B_l|\le C\left(\frac{\sup_{x\in[l-1,l+1]}|f'(x)|}{1}
@@ -403,17 +444,27 @@ O(\log\log n),&p=1/2,\\
 O((\log n)^{2p-1}),&p>1/2.
 \end{cases}
 \]
-The three cases follow by $u=\log x$ in the comparison integral $\int^n(\log x)^{2p-2}dx/x$. In every case $D_n=o(f(n)^2)$ when $f(n)\to\infty$; for $f=1$, $D_n=O(1)$ and the exact $B_l=O(l^{-2})$ is handled below. The terminal contribution is
+The three cases follow by $u=\log x$ in the comparison integral $\int^n(\log x)^{2p-2}dx/x$. In every case $D_n=o(f(n)^2)$ when $f(n)\to\infty$; for $f=1$, $D_n=O(1)$ and the exact $B_l=O(l^{-2})$ is handled below.
+
+\paragraph{Step 5: Identify the dominant terminal contribution.}
+The terminal contribution is
 \[
 4T_n^2\sum_{l=2}^n(l-1)\sim
 4\frac{f(n)^2}{n^2}\frac{n^2}{2}=2f(n)^2.
 \]
+\paragraph{Step 6: Control the cross term.}
 Expanding $(B_l-T_n)^2$, Cauchy--Schwarz bounds the magnitude of its cross term by
 $2\{D_n T_n^2\sum_{l=2}^n(l-1)\}^{1/2}=o(f(n)^2)$ for the growing weights. The end coefficient contributes $4n(f(n)/n)^2=o(f(n)^2)$. Thus $\operatorname{Var}(Q_{n,w})\sim2f(n)^2$ for the growing log and log-log weights. For $f=1$, direct integral comparison yields $B_l=O(l^{-2})$. Thus $D_n=O(1)$ and $\sum_{l=2}^n(l-1)|B_l|=O(\log n)$. Since $T_n=O(1/n)$, the cross term is $O(\log n/n)=o(1)$; the end coefficient is $O(1/n)$. Therefore $\operatorname{Var}(Q_{n,w})\sim2$ also in the unweighted case.
 
-The linear variance is $4h\sum_iw_i^2\sim4c f(n)^2$. Hence the full variance is of order $f(n)^2$ (indeed asymptotic to $(2+4c)f(n)^2$ for the growing weights). Meanwhile Appendix B gives $\mathbb E\Xi_{n,w}\sim(\log n)f(n)/(p+1)$ for log powers and $\sim(\log n)f(n)$ for log-log; the $-hW_n$ term is only $O(f(n))$. The ordinary-weight mean is $\sim\log n$ and its full variance tends to $2+4c$. Therefore all four Chebyshev ratios have order $(\log n)^{-2}$. Their means are positive for fixed $c$, establishing the sign statement in the main text.
+\paragraph{Step 7: Add the linear variance.}
+The linear variance is $4h\sum_iw_i^2\sim4c f(n)^2$. Hence the full variance is of order $f(n)^2$ (indeed asymptotic to $(2+4c)f(n)^2$ for the growing weights).
+
+\paragraph{Step 8: Conclude the Chebyshev-ratio order.}
+Meanwhile Appendix B gives $\mathbb E\Xi_{n,w}\sim(\log n)f(n)/(p+1)$ for log powers and $\sim(\log n)f(n)$ for log-log; the $-hW_n$ term is only $O(f(n))$. The ordinary-weight mean is $\sim\log n$ and its full variance tends to $2+4c$. Therefore all four Chebyshev ratios have order $(\log n)^{-2}$. Their means are positive for fixed $c$, establishing the sign statement in the main text.
 
 \subsection{Stretched-exponential weights at fixed $\theta$}\label{app:stretched}
+We verify three properties in order: crossing alignment, vanishing normalized weight concentration, and fixed-$\theta$ concentration.
+
 Let $w_i=\exp(i^\beta)$ with $0<\beta<1$. Put $F(x)=e^{x^\beta}$. Substitution $u=x^\beta$ and integration by parts yield, for $a=1,2$,
 \[
 \int^n F(x)^a\,dx
@@ -422,11 +473,17 @@ Let $w_i=\exp(i^\beta)$ with $0<\beta<1$. Put $F(x)=e^{x^\beta}$. Substitution $
 \]
 Because $F$ is increasing, bounding sums between adjacent integrals changes them by at most $O(F(n)^a)$, negligible relative to $n^{1-\beta}F(n)^a$. Endpoint shifts by one are negligible since $(n+1)^\beta-n^\beta\to0$. Therefore
 \[
-W_n\sim\frac{n^{1-\beta}e^{n^\beta}}{\beta},\quad
-\sum_iw_i^2\sim\frac{n^{1-\beta}e^{2n^\beta}}{2\beta},\quad
-\frac{\sum_iw_i^2}{W_n^2}\sim\frac{\beta}{2n^{1-\beta}}\to0.
+W_n\sim\frac{n^{1-\beta}e^{n^\beta}}{\beta}.
 \]
-These sums show an effective terminal window of order $n^{1-\beta}=o(n)$. For any fixed $\delta>0$, the total weight at $i-1\le(1-\delta)n$ is at most $n e^{((1-\delta)n+O(1))^\beta}=o(W_n)$, because the exponential gap is of order $n^\beta$. On the remaining indices, $n/(i-1)\le1/(1-\delta)$; for the earlier indices their weighted contribution to $nr_n$ is negligible by the same exponential gap even after the factor $n/(i-1)\le n$. Hence $1\le\liminf nr_n\le\limsup nr_n\le1/(1-\delta)$, and $\delta\downarrow0$ proves alignment.
+For any fixed $\delta>0$, the total weight at $i-1\le(1-\delta)n$ is at most $n e^{((1-\delta)n+O(1))^\beta}=o(W_n)$, because the exponential gap is of order $n^\beta$. On the remaining indices, $n/(i-1)\le1/(1-\delta)$; for the earlier indices their weighted contribution to $nr_n$ is negligible by the same exponential gap even after the factor $n/(i-1)\le n$. Hence $1\le\liminf nr_n\le\limsup nr_n\le1/(1-\delta)$, and $\delta\downarrow0$ proves alignment.
+
+The same sum comparison gives
+\[
+\sum_iw_i^2\sim\frac{n^{1-\beta}e^{2n^\beta}}{2\beta},\qquad
+\frac{\sum_iw_i^2}{W_n^2}
+\sim\frac{\beta}{2n^{1-\beta}}\to0.
+\]
+These sums show an effective terminal window of order $n^{1-\beta}=o(n)$.
 
 For fixed $\theta\ne0$, $\mathbb E\Xi_{n,w}/W_n=r_n-\theta^2\to-\theta^2$. To bound the quadratic variance, define the centered single-time quadratic increment $U_m=(S_m^2-m)/m^2-2\xi_{m+1}S_m/m$. Gaussian moments and independence give
 $\|U_m\|_2\le\sqrt2/m+2/\sqrt m\le C/\sqrt m$.
