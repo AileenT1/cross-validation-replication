@@ -196,6 +196,8 @@ and~\ref{app:slow-var}). Geometric weights align the
 crossing but concentrate too strongly for near-crossing
 Chebyshev concentration (Appendix~\ref{app:geometric}).
 
+\section{Conclusion}
+
 \noindent\textbf{What 09 establishes.}
 Ordinary RV crosses too late because it accumulates earlier
 validation losses. Weighting can align the expected crossing,
@@ -209,20 +211,6 @@ different validation designs, weight classes, or crossing
 models remain possible directions.
 
 \appendix
-\noindent\textbf{Notation used below.}
-The observations are $Y_i=\theta+\xi_i$ with independent
-$\xi_i\sim N(0,1)$ and $0<|\theta|<1$. Model 0 predicts with
-$\bar Y_n$, Model 1 predicts zero, and both use squared loss.
-For positive deterministic weights $w_i$, let
-$\Xi_{n,w}=\sum_{i=2}^{n+1}w_i\{(Y_i-\bar Y_{i-1})^2-Y_i^2\}$,
-$\Delta_w(n)=\mathbb E\Xi_{n,w}$,
-$A_n=\sum_{i=2}^{n+1}w_i/(i-1)$, and
-$W_n=\sum_{i=2}^{n+1}w_i$.
-Also $\Delta_R(n)=R_0(n)-R_1(n)$ is the current population-risk
-difference, while
-$\Delta_{\rm RV}(n)=\sum_{m=1}^n(1/m-\theta^2)$ is the expected
-ordinary-RV difference.
-
 \section{Population risk and ordinary RV}
 
 \subsection{Population-risk formulas and strict crossing}\label{app:pop}
