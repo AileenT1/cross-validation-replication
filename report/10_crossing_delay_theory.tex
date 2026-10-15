@@ -1,0 +1,541 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\title{Analysis 10: Fixed Crossing Delay and Concentration\\
+for Weighted Rolling Validation}
+\author{Aileen Tao}
+\date{}
+\begin{document}
+\maketitle
+
+\section{Motivation: from exact alignment to fixed crossing delay}
+
+Analysis 09 showed that exact crossing alignment concentrates positive
+rolling-validation (RV) weights on an increasingly small fraction of
+recent validation times, obstructing Chebyshev concentration on the
+moving-crossing scale. Analysis 10 studies the tradeoff between fixed
+crossing delay and concentration:
+\[
+\begin{gathered}
+\text{If we allow }\frac{n_{{\rm RV},w}}{n_{\rm pop}}\to\lambda>1,\\
+\text{how much do averaging and concentration improve,}\\
+\text{and is that enough for the Chebyshev ratio to vanish?}
+\end{gathered}
+\]
+Analysis 06 established power-weight concentration against an oracle.
+We reuse its full variance calculation, distinguishing that benchmark
+from Analysis 09's moving-crossing model.
+
+Let $Y_i=\theta+\xi_i$, with independent $\xi_i\sim N(0,1)$ and
+$0<|\theta|<1$. Model 0 predicts with the training sample mean;
+Model 1 predicts zero. Both use squared loss. At validation time
+$i=2,\ldots,n+1$, the training size is $i-1$. Throughout, the weights
+$w_i>0$ form a deterministic sequence independent of the data and
+$\theta$. The parameter $\lambda$ is fixed and finite unless a
+subsequent parameter limit is explicitly stated.
+
+\section{General constant crossing ratio}
+
+Analysis 09 gives
+\[
+\Delta_{{\rm RV},w}(n)
+=\sum_{i=2}^{n+1}w_i\left(\frac1{i-1}-\theta^2\right),
+\qquad
+r_n=\frac{\sum_{i=2}^{n+1}w_i/(i-1)}{\sum_{i=2}^{n+1}w_i}.
+\]
+Dividing by positive total weight preserves the crossing:
+\[
+\frac{\Delta_{{\rm RV},w}(n)}{\sum_{i=2}^{n+1}w_i}
+=r_n-\theta^2,\qquad \Delta_R(n)=\frac1n-\theta^2.
+\]
+Thus $r_n$ plays the same role for weighted RV that $1/n$ plays for
+population risk. Write $n_{{\rm RV},w}$ and $n_{\rm pop}$ for the first
+strict negative indices of these differences. Since $r_n\ge1/n$, the
+normalized expected weighted-RV difference is always at least as large
+as the population-risk difference. Thus weighted RV cannot cross earlier
+than population risk:
+\[
+n_{{\rm RV},w}\ge n_{\rm pop}
+\]
+whenever the weighted crossing exists. Therefore any finite limiting
+crossing ratio must satisfy
+\[
+\lambda\ge1.
+\]
+
+\begin{samepage}
+\begin{theorem}[Constant crossing delay]\label{thm:crossing}
+For fixed $\lambda\ge1$,
+\[
+nr_n\to\lambda
+\quad\Longleftrightarrow\quad
+r_n\sim\frac{\lambda}{n}.
+\]
+Under this condition, $n_{{\rm RV},w}$ exists for every
+$0<|\theta|<1$, and
+\[
+n_{\rm pop}=\lfloor\theta^{-2}\rfloor+1\sim\theta^{-2},
+\qquad
+\frac{n_{{\rm RV},w}}{n_{\rm pop}}\to\lambda
+\qquad(|\theta|\to0).
+\]
+\end{theorem}
+\noindent\textbf{Interpretation.} The value $\lambda=1$ is the earliest
+possible asymptotic crossing; $\lambda>1$ imposes a fixed delay.
+\textbf{Proof.} See Appendix~\ref{app:bracketing}, extending Analysis 09,
+Appendix B.4.
+\end{samepage}
+
+\section{Power weights and the $\lambda$-tradeoff}
+
+Analysis 06 studied the same power-weight family $w_i=i^\alpha$ under
+an oracle comparison. Here we use this family to quantify the crossing-delay
+and averaging tradeoff in the present model.
+
+\begin{proposition}[Power weights and crossing delay]\label{prop:power}
+For $w_i=i^\alpha$ with fixed $\alpha>0$,
+\[
+\sum_{i=2}^{n+1}w_i\sim\frac{n^{\alpha+1}}{\alpha+1},
+\qquad
+\sum_{i=2}^{n+1}\frac{w_i}{i-1}\sim\frac{n^\alpha}{\alpha},
+\qquad
+\sum_{i=2}^{n+1}w_i^2\sim\frac{n^{2\alpha+1}}{2\alpha+1}.
+\]
+Consequently,
+\[
+r_n\sim\frac{\alpha+1}{\alpha n}
+\quad\Longrightarrow\quad nr_n\to\frac{\alpha+1}{\alpha}.
+\]
+Hence, by Theorem~\ref{thm:crossing},
+\[
+\lambda=\frac{\alpha+1}{\alpha}=1+\frac1\alpha,\qquad
+\frac{n_{{\rm RV},w}}{n_{\rm pop}}\to\lambda.
+\]
+\end{proposition}
+\noindent\textbf{Interpretation.} The relation
+\[
+\lambda=1+\frac1\alpha
+\]
+shows how the power exponent controls the crossing delay. Equivalently,
+\[
+\alpha=\frac1{\lambda-1},
+\]
+so every fixed delay $\lambda>1$ can be achieved by an appropriate
+choice of $\alpha$. For power weights,
+\[
+n\frac{\sum_{i=2}^{n+1}w_i^2}
+{\left(\sum_{i=2}^{n+1}w_i\right)^2}
+\to\frac{(\alpha+1)^2}{2\alpha+1}.
+\]
+Substituting $\alpha=1/(\lambda-1)$ gives
+\[
+\frac{(\alpha+1)^2}{2\alpha+1}=\frac{\lambda^2}{\lambda^2-1}.
+\]
+This normalized square-weight factor measures how concentrated the
+weights are. Values closer to $1$ correspond to more evenly spread
+weights and stronger averaging, while larger values correspond to
+more concentrated weights and weaker averaging.
+
+The following parameter limits are taken after $n\to\infty$ at fixed
+$\lambda>1$. As $\lambda\downarrow1$,
+\[
+\lambda\downarrow1\quad\Longrightarrow\quad\alpha\to\infty,
+\qquad \lambda^2-1\to0^+,
+\qquad
+\frac{\lambda^2}{\lambda^2-1}\to\infty.
+\]
+As $\lambda$ approaches $1$, $\alpha$ becomes large and the power
+weights put more mass on the latest validation times. The weights are
+therefore more concentrated, so averaging becomes weaker. This matches
+Analysis 09: exact alignment ($\lambda=1$) forces the normalized
+square-weight factor to diverge.
+
+Conversely,
+\[
+\lambda\to\infty\quad\Longrightarrow\quad\alpha\downarrow0,
+\qquad
+\frac{\lambda^2}{\lambda^2-1}
+=\frac1{1-\lambda^{-2}}\longrightarrow1.
+\]
+As $\lambda\to\infty$, $\alpha\to0$, so the power weights become close
+to equal weights. The weights are more evenly spread, the normalized
+square-weight factor approaches $1$, and averaging becomes stronger.
+The price is a much later crossing.
+\textbf{Proof.} See Appendix~\ref{app:power-sums} and
+Theorem~\ref{thm:crossing}.
+
+\section{Concentration on the moving-crossing scale for fixed $\lambda>1$}
+
+Analysis 09 gives the realized-score lower bound
+\[
+\Xi_{n,w}=\sum_{i=2}^{n+1}w_i
+\{(Y_i-\bar Y_{i-1})^2-Y_i^2\},
+\qquad
+\mathbb E\Xi_{n,w}=\left(\sum_{i=2}^{n+1}w_i\right)(r_n-\theta^2),
+\]
+\begin{equation}\label{eq:lower}
+\frac{\operatorname{Var}(\Xi_{n,w})}{\{\mathbb E\Xi_{n,w}\}^2}
+\ge\frac{4\theta^2\sum_{i=2}^{n+1}w_i^2}
+{\left(\sum_{i=2}^{n+1}w_i\right)^2(r_n-\theta^2)^2},
+\end{equation}
+when the mean is nonzero (Analysis 09, Appendices D.1--D.2).
+
+Under
+\[
+nr_n\to\lambda\in[1,\infty),\qquad
+n\theta^2\to c\in(0,\infty),\qquad |\theta|\to0,
+\]
+we have
+\[
+r_n\sim\frac{\lambda}{n},\qquad \theta^2\sim\frac cn,
+\qquad r_n-\theta^2\sim\frac{\lambda-c}{n}\quad(c\ne\lambda).
+\]
+Substitution into \eqref{eq:lower} gives
+\[
+\frac{\operatorname{Var}(\Xi_{n,w})}{\{\mathbb E\Xi_{n,w}\}^2}
+\ge(1+o(1))\frac{4c}{(\lambda-c)^2}\,
+n\frac{\sum_{i=2}^{n+1}w_i^2}
+{\left(\sum_{i=2}^{n+1}w_i\right)^2}.
+\]
+For positive weights, Cauchy--Schwarz gives
+\[
+\left(\sum_{i=2}^{n+1}w_i\right)^2
+\le n\sum_{i=2}^{n+1}w_i^2,
+\]
+so
+\[
+n\frac{\sum_{i=2}^{n+1}w_i^2}
+{\left(\sum_{i=2}^{n+1}w_i\right)^2}\ge1.
+\]
+This removes dependence on the specific weights and gives the general
+lower bound below.
+
+\begin{samepage}
+\begin{proposition}[Positive-weight lower bound]\label{prop:lower}
+Under the preceding limits and positive deterministic weights,
+\[
+\liminf\frac{\operatorname{Var}(\Xi_{n,w})}
+{\{\mathbb E\Xi_{n,w}\}^2}
+\ge\frac{4c}{(\lambda-c)^2}>0,\qquad c\ne\lambda.
+\]
+At $c=\lambda$, the leading normalized mean vanishes; the ratio diverges
+when the mean is nonzero and is undefined at exact mean-zero points.
+\end{proposition}
+\noindent\textbf{Interpretation.} For any finite crossing delay $\lambda$,
+the Chebyshev ratio does not vanish on this scale.
+\textbf{Proof.} See Appendix~\ref{app:general-lower}.
+\end{samepage}
+
+\medskip
+For power weights $w_i=i^\alpha$, $\alpha>0$, the current-model mean is
+\[
+\mathbb E\Xi_{n,w}
+=\left(\sum_{i=2}^{n+1}w_i\right)(r_n-\theta^2)
+\sim\frac{n^{\alpha+1}}{\alpha+1}\frac{\lambda-c}{n}.
+\]
+Since $\lambda=(\alpha+1)/\alpha$,
+\[
+\mathbb E\Xi_{n,w}
+\sim n^\alpha\left(\frac1\alpha-\frac{c}{\alpha+1}\right),
+\qquad c\ne\lambda.
+\]
+The quadratic-noise component is unchanged from Analysis 06, so its
+variance asymptotic can be reused directly:
+\[
+\operatorname{Var}(\Xi_n^{(\alpha)})\sim\frac{2n^{2\alpha}}{\alpha+1}.
+\]
+The present model adds the linear-noise term
+\[
+-2\theta\sum_{i=2}^{n+1}i^\alpha\xi_i,
+\]
+whose variance is
+\[
+4\theta^2\sum_{i=2}^{n+1}i^{2\alpha}
+\sim\frac{4c}{2\alpha+1}n^{2\alpha}.
+\]
+Therefore,
+\[
+\operatorname{Var}(\Xi_{n,w})
+\sim n^{2\alpha}\left(\frac2{\alpha+1}+\frac{4c}{2\alpha+1}\right).
+\]
+The first term is the Analysis 06 quadratic component; the second is
+the additional linear-noise contribution (Appendix~\ref{app:transfer}).
+
+Combining the mean and variance gives the following result.
+\begin{theorem}[Full moving-crossing ratio for power weights]\label{thm:ratio}
+For fixed $\alpha>0$, $\lambda=1+1/\alpha$, and the preceding
+moving-crossing limits with $c\ne\lambda$,
+\begin{equation}\label{eq:full-ratio}
+\frac{\operatorname{Var}(\Xi_{n,w})}{\{\mathbb E\Xi_{n,w}\}^2}
+\to
+\frac{2\lambda/(\lambda-1)+4c\lambda^2/(\lambda^2-1)}
+{(\lambda-c)^2}\in(0,\infty).
+\end{equation}
+At $c=\lambda$, the ratio diverges when defined.
+\end{theorem}
+\noindent\textbf{Interpretation.} For fixed finite $\lambda>1$, the
+limit is positive for $c\ne\lambda$, so the Chebyshev ratio does not
+vanish; at $c=\lambda$, it diverges when defined.
+\textbf{Proof.} See Appendices~\ref{app:transfer}--\ref{app:power-ratio}.
+
+\section{Conclusion and implications}
+
+Allowing a fixed crossing delay improves averaging compared with the
+exact-alignment case studied in Analysis 09, because the weights do not
+need to be as concentrated on the latest validation times.
+
+However, any fixed finite delay is still not enough to make the
+variance-to-mean-squared ratio vanish on the moving-crossing scale.
+The ratio remains positive away from the weighted crossing and becomes
+unbounded at the crossing itself, when defined.
+
+The main tradeoff is clear: better crossing alignment requires more
+concentrated weights and weaker averaging, while stronger averaging
+requires accepting a larger crossing delay.
+
+\appendix
+\section*{Appendix}
+\section{General crossing theorem}
+
+\subsection{Population risk, positivity, and monotonicity}\label{app:monotonicity}
+An independent new response has variance $1$. The sample-mean
+predictor has estimation variance $1/n$ and no bias, while the zero
+predictor has squared bias $\theta^2$. Thus their risks are $1+1/n$
+and $1+\theta^2$, respectively. Their difference is negative exactly
+when $n>\theta^{-2}$, giving
+$n_{\rm pop}=\lfloor\theta^{-2}\rfloor+1$. This is the calculation
+in Analysis 09, Appendix A.1, and applies to either sign of $\theta$.
+
+The one-time expected validation difference is
+$1/(i-1)-\theta^2$. Linearity of expectation gives the weighted mean
+in Section 2 without requiring independence of validation losses.
+Every reciprocal in $r_n$ is at least $1/n$, so $r_n\ge1/n$ and
+the weighted strict crossing cannot precede the population crossing.
+For $n>1$, the inequality is strict because the earlier terms have
+positive weights.
+
+Adding the next positive weight gives
+\[
+r_{n+1}=
+\frac{(\sum_{i=2}^{n+1}w_i)r_n+w_{n+2}/(n+1)}
+{\sum_{i=2}^{n+1}w_i+w_{n+2}}.
+\]
+Since $r_n\ge1/n>1/(n+1)$, this weighted average is strictly smaller
+than $r_n$. Thus once $r_n<\theta^2$ occurs, it remains so.
+Under $nr_n\to\lambda<\infty$, $r_n\to0$; hence a first strict
+crossing exists for each fixed $\theta\ne0$. Also $r_1=1>\theta^2$.
+
+\subsection{Epsilon bracketing of the first strict crossing}\label{app:bracketing}
+Because $\lambda>0$, the identity
+$r_n/(\lambda/n)=nr_n/\lambda$ proves the equivalence in
+Theorem~\ref{thm:crossing}. To prove its crossing conclusion, put
+$h=\theta^2\downarrow0$ and fix $\varepsilon\in(0,1)$. Set
+\[
+n_- =\left\lfloor\frac{(1-\varepsilon)\lambda}{h}\right\rfloor,
+\qquad
+n_+ =\left\lceil\frac{(1+\varepsilon)\lambda}{h}\right\rceil.
+\]
+Both indices tend to infinity and rounding changes either by at most
+one. Since $nr_n\to\lambda$,
+\[
+\frac{r_{n_-}}h\to\frac1{1-\varepsilon}>1,
+\qquad
+\frac{r_{n_+}}h\to\frac1{1+\varepsilon}<1.
+\]
+For small $h$, the mean is positive at $n_-$ and strictly negative at
+$n_+$. Monotonicity from Appendix~\ref{app:monotonicity} therefore gives
+$n_-<n_{{\rm RV},w}\le n_+$. Dividing by $h^{-1}$ bounds the lower and
+upper limits of $hn_{{\rm RV},w}$ by $(1-\varepsilon)\lambda$ and
+$(1+\varepsilon)\lambda$. Letting $\varepsilon\downarrow0$ yields
+$hn_{{\rm RV},w}\to\lambda$. Since $hn_{\rm pop}\to1$, the desired
+ratio follows. All dependence on $\theta$ is through $h$, so the result
+holds as $|\theta|\to0$ from either sign.
+
+\section{Power sums and reparameterization}
+
+\subsection{Integral comparisons and indexing shifts}\label{app:power-sums}
+For fixed $\beta>-1$, integral comparison gives
+\[
+\sum_{i=2}^{n+1}i^\beta\sim\frac{n^{\beta+1}}{\beta+1}.
+\]
+For $\beta\ge0$, monotonicity sandwiches the sum between integrals
+with endpoints shifted by at most one; the endpoint error is
+$O(n^\beta+1)=o(n^{\beta+1})$. For $-1<\beta<0$, the decreasing
+summand has a bounded sum--integral discrepancy, also negligible
+relative to the divergent integral. Replacing $n+1$ by $n$ in the
+leading power is harmless since $(n+1)/n\to1$.
+
+Apply this result with $\beta=\alpha$ and $2\alpha$ to obtain the
+total-weight and square-weight sums in Proposition~\ref{prop:power}.
+For the reciprocal-weight sum,
+\[
+\frac{i^\alpha/(i-1)}{i^{\alpha-1}}=\frac{i}{i-1}\to1.
+\]
+The comparison sum $\sum_{i=2}^{n+1}i^{\alpha-1}$ diverges for
+$\alpha>0$. For any fixed tolerance, the relative error in the tail
+is eventually within that tolerance, and the finite initial part is
+negligible. Thus the reciprocal-weight sum is asymptotic to
+$n^\alpha/\alpha$. Dividing by total weight gives
+$nr_n\to(\alpha+1)/\alpha$; Theorem~\ref{thm:crossing} then supplies
+the crossing ratio.
+
+\subsection{Delay and averaging constants}\label{app:parameterization}
+Squaring the total-weight asymptotic and dividing the square-weight
+sum by it gives
+\[
+n\frac{\sum_{i=2}^{n+1}i^{2\alpha}}
+{(\sum_{i=2}^{n+1}i^\alpha)^2}
+\to\frac{(\alpha+1)^2}{2\alpha+1}.
+\]
+With $\alpha=1/(\lambda-1)$,
+\[
+\alpha+1=\frac{\lambda}{\lambda-1},\qquad
+2\alpha+1=\frac{\lambda+1}{\lambda-1},
+\]
+so this constant is $\lambda^2/(\lambda^2-1)$. The oracle result
+from Analysis 06 transforms as
+\[
+\frac{2\alpha^2}{1+\alpha}
+=\frac{2}{\lambda(\lambda-1)}.
+\]
+Both expressions decrease strictly on $\lambda>1$. Their derivatives
+are $-2\lambda/(\lambda^2-1)^2$ and
+$-2(2\lambda-1)/\{\lambda^2(\lambda-1)^2\}$, respectively.
+Their endpoint limits are the ones stated in Section 3.
+These are limits of constants obtained for each fixed $\alpha>0$,
+not a claim that the asymptotics hold uniformly as $\alpha\downarrow0$.
+At $\alpha=0$, Analysis 06 has a vanishing oracle ratio, while
+Analysis 09's ordinary-RV crossing has a diverging logarithmic delay
+rather than a finite $\lambda$.
+
+\section{Concentration on the moving-crossing scale}
+
+\subsection{Transfer of the Analysis 06 variance}\label{app:transfer}
+Write $S_{i-1}=\sum_{t=1}^{i-1}\xi_t$ in this appendix. Expanding
+one loss difference gives
+\[
+(Y_i-\bar Y_{i-1})^2-Y_i^2
+=\frac{S_{i-1}^2}{(i-1)^2}
+-2\xi_i\frac{S_{i-1}}{i-1}-2\theta\xi_i-\theta^2.
+\]
+The first two terms are exactly the oracle loss difference used in
+Analysis 06. Its score with validation endpoint $n+1$ is therefore
+related to the present power-weight score by
+\[
+\Xi_{n,w}=\Xi_{n+1}^{(\alpha)}
+-2\theta\sum_{i=2}^{n+1}i^\alpha\xi_i
+-\theta^2\sum_{i=2}^{n+1}i^\alpha.
+\]
+The endpoint convention differs by one observation, and
+$(n+1)^{2\alpha}\sim n^{2\alpha}$ for fixed $\alpha$.
+
+After centering, the oracle score is a quadratic polynomial in the
+independent standard Gaussians. Its covariance with each $\xi_i$ is
+zero because all centered Gaussian third moments vanish. The constant
+bias term has no variance. Consequently the exact variance transfer is
+\[
+\operatorname{Var}(\Xi_{n,w})
+=\operatorname{Var}(\Xi_{n+1}^{(\alpha)})
++4\theta^2\sum_{i=2}^{n+1}i^{2\alpha}.
+\]
+This is the orthogonality argument of Analysis 09, Appendices D.1--D.2.
+Analysis 06's equation (4) and the proof of its proposition, equation
+(5), already establish
+$\operatorname{Var}(\Xi_{n+1}^{(\alpha)})\sim2n^{2\alpha}/(1+\alpha)$.
+We use that result rather than repeating its coefficient calculation.
+
+When $n\theta^2\to c\ge0$, Appendix~\ref{app:power-sums} gives
+\[
+\frac{\mathbb E\Xi_{n,w}}{n^\alpha}
+\to\frac1\alpha-\frac{c}{\alpha+1},\qquad
+\frac{\operatorname{Var}(\Xi_{n,w})}{n^{2\alpha}}
+\to\frac2{\alpha+1}+\frac{4c}{2\alpha+1}.
+\]
+For $c\ne\lambda$, the limiting mean coefficient is nonzero, so
+the first limit can be expressed with $\sim$ as in Section 4.
+At $c=\lambda$, only $\mathbb E\Xi_{n,w}=o(n^\alpha)$ follows;
+we do not use an asymptotic equivalence to zero.
+
+\subsection{General lower bound and the boundary}\label{app:general-lower}
+The same Gaussian orthogonality works for any deterministic weights,
+so \eqref{eq:lower} holds whenever the mean is nonzero. Cauchy--Schwarz
+on the $n$ weights gives
+\[
+(\sum_{i=2}^{n+1}w_i)^2\le n\sum_{i=2}^{n+1}w_i^2,
+\qquad
+n\frac{\sum_{i=2}^{n+1}w_i^2}{(\sum_{i=2}^{n+1}w_i)^2}\ge1.
+\]
+For $c\ne\lambda$, $n(r_n-\theta^2)\to\lambda-c\ne0$, so the
+mean is eventually nonzero. Rewriting \eqref{eq:lower} yields
+\[
+\frac{\operatorname{Var}(\Xi_{n,w})}{\{\mathbb E\Xi_{n,w}\}^2}
+\ge
+\frac{4n\theta^2}{\{n(r_n-\theta^2)\}^2}
+\left[n\frac{\sum_{i=2}^{n+1}w_i^2}
+{(\sum_{i=2}^{n+1}w_i)^2}\right].
+\]
+The prefactor tends to $4c/(\lambda-c)^2$, proving
+Proposition~\ref{prop:lower}. For $c=\lambda$, its numerator tends to
+$4\lambda>0$ and its denominator tends to zero. The bracket is at
+least one, so the ratio diverges along any sequence on which it is
+defined. At exact mean-zero points, division by the squared mean is
+undefined. This proves the boundary conclusion without requiring
+a rate for the smaller-order mean.
+
+\subsection{Full power-weight ratio}\label{app:power-ratio}
+For $c\ne\lambda$, division of the limits in
+Appendix~\ref{app:transfer} gives
+\[
+\frac{\operatorname{Var}(\Xi_{n,w})}{\{\mathbb E\Xi_{n,w}\}^2}
+\to
+\frac{2/(\alpha+1)+4c/(2\alpha+1)}
+{\{1/\alpha-c/(\alpha+1)\}^2}.
+\]
+Since $1/\alpha=(\lambda)/(\alpha+1)$, multiplying numerator and
+denominator by $(\alpha+1)^2$ makes the denominator
+$(\lambda-c)^2$ and the numerator
+\[
+2(\alpha+1)+\frac{4c(\alpha+1)^2}{2\alpha+1}
+=\frac{2\lambda}{\lambda-1}
++\frac{4c\lambda^2}{\lambda^2-1}.
+\]
+This proves \eqref{eq:full-ratio}, with a finite strictly positive
+limit. The boundary follows from Appendix~\ref{app:general-lower};
+equivalently, at $c=\lambda$ the variance has a positive
+$n^{2\alpha}$ coefficient whereas the squared mean is $o(n^{2\alpha})$.
+For $\alpha=1$ and $\lambda=2$, the mean is
+$\sim n(1-c/2)$ away from $c=2$, the variance is
+$\sim n^2(1+4c/3)$, and the ratio limit is
+$(4+16c/3)/(2-c)^2$, agreeing with \eqref{eq:full-ratio}.
+
+\subsection{Comparison of asymptotic regimes}\label{app:regimes}
+If $n\theta^2\to0$ with fixed $\alpha>0$, the bias contribution to
+the mean and the linear variance are negligible on the scales
+$n^\alpha$ and $n^{2\alpha}$. Appendix~\ref{app:transfer} therefore
+recovers the Analysis 06 ratio $2\alpha^2/(1+\alpha)$.
+For fixed $\lambda>1$, the constant in \eqref{eq:full-ratio} tends
+to this value as $c\downarrow0$, but diverges as $c\to\lambda$
+because its numerator remains positive while the denominator vanishes.
+
+At fixed $c>0$, $c\ne1$, both numerator terms in
+\eqref{eq:full-ratio} diverge as $\lambda\downarrow1$, while
+$(\lambda-c)^2\to(1-c)^2>0$. This recovers the qualitative
+obstruction at Analysis 09's alignment boundary. At $c=1$, the
+denominator also vanishes and the constant again diverges.
+As $\lambda\to\infty$ with $c>0$ fixed, the numerator tends to
+$2+4c$ and the denominator grows as $\lambda^2$, so the constant
+tends to zero. In this comparison $n/n_{{\rm RV},w}\to c/\lambda$
+in the preceding fixed-parameter limit, placing the evaluation
+increasingly far before the weighted crossing.
+
+All parameter comparisons follow the fixed-$\alpha$, fixed-$c$
+asymptotics; no uniform or simultaneous limit is asserted. In
+particular, neither the small oracle benchmark nor a bounded
+square-weight factor gives a vanishing ratio for a fixed finite
+$\lambda$ and fixed $c>0$. Nor does a nonvanishing Chebyshev ratio
+by itself establish a positive limiting wrong-selection probability.
+
+\end{document}

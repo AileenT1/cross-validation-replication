@@ -1,0 +1,108 @@
+---
+title: "Analysis 10: A Focused Simulation Check"
+author: "Aileen Tao"
+execute:
+  dir: project
+format:
+  pdf:
+    documentclass: article
+    fontsize: 11pt
+    geometry: margin=1in
+    pdf-engine: pdflatex
+    keep-tex: false
+    fig-width: 7
+    fig-height: 3.9
+    include-in-header:
+      text: |
+        \usepackage{float}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      fig.pos = "H", out.width = "100%")
+here::i_am("report/10_crossing_delay_simulation.qmd")
+source(here::here("code", "10_crossing_delay_simulation.R"),
+       local = knitr::knit_global())
+```
+
+## 1. Expected crossing delay
+
+We check Analysis 10 without changing its theory. The model is
+$Y_i=\theta+\xi_i$, with independent $\xi_i\sim N(0,1)$; the sample-mean
+and zero predictors use squared loss and $w_i=i^\alpha$, with validation
+times $i=2,\ldots,n+1$. The first two checks are exact deterministic
+calculations. The third uses actual Gaussian-path Monte Carlo.
+
+```{r crossing-ratio}
+print(crossings_plot10)
+```
+
+**Figure 1.** Exact first-strict-crossing ratios (blue) and
+$\lambda=1+1/\alpha$ (dashed orange). The logarithmic $|\theta|$ axis
+decreases to the right. The grid is $0.2,0.1,0.05,0.025,0.0125,0.00625$.
+
+**Interpretation.** The ratios approach their fixed-delay targets.
+At the smallest $|\theta|$, they are
+`r paste(sprintf("%.4f", last_crossing10$ratio), collapse = ", ")`
+for $\alpha=0.5,1,2,4$, respectively, versus $3,2,1.5,1.25$.
+Integer rounding causes small deviations; convergence need not be
+monotone. These are expected-score crossings, not realized selection rates.
+
+\newpage
+
+## 2. Averaging strength
+
+```{r averaging-factor}
+print(factor_plot10)
+```
+
+**Figure 2.** Exact
+$F_n=n\sum_{i=2}^{n+1}w_i^2/(\sum_{i=2}^{n+1}w_i)^2$ (blue)
+against $(\alpha+1)^2/(2\alpha+1)=\lambda^2/(\lambda^2-1)$
+(dashed orange), for training sizes from $20$ to $10{,}000$.
+
+**Interpretation.** At $n=10{,}000$, the factors are
+`r paste(sprintf("%.4f", last_factor10$factor), collapse = ", ")`,
+respectively. Larger $\alpha$ gives a smaller crossing delay but worse
+averaging. Each fixed $\lambda>1$ has a finite limit, unlike the forced
+divergence under exact alignment in Analysis 09. This factor measures
+weight concentration only; it is not the full Chebyshev ratio and does
+not by itself establish concentration.
+
+\newpage
+
+## 3. Full moving-crossing Chebyshev ratio
+
+For $\alpha=1$ and $\lambda=2$, use $n=200,500,1000,2000$ and
+$c=0.5,1,1.5,1.8,2.2,2.5,3$, setting $\theta=\sqrt{c/n}$.
+Each configuration uses 5,000 independent Gaussian paths generated in R
+(seed 20261014), reused across $n$ and $c$. The empirical ratio uses
+the sample variance divided by the squared sample mean of $\Xi_{n,w}$.
+
+```{r chebyshev-ratio, fig.height=4.15}
+print(ratio_plot10)
+```
+
+**Figure 3.** Empirical ratios and the Analysis 10 limit
+$R(2,c)=(4+16c/3)/(2-c)^2$. Exact finite-$n$ ratios use the Gaussian
+variance identity. Bars are pointwise percentile intervals from 400
+resamples of the simulated paths. Configurations are paired, not
+independent across panels. No values are joined across $c=2$.
+
+**Interpretation.** At $n=2000$, exact finite-$n$ ratios are within
+`r sprintf("%.1f", 100 * finite_error10)`% of the limit on this grid.
+Monte Carlo ratios at $|c-2|\ge0.5$ differ from exact values by at most
+`r sprintf("%.1f", 100 * mc_error10)`%.
+Near the weighted crossing,
+`r paste(sprintf("$c=%.1f$: empirical %.1f, exact %.1f, limit %.1f", near10$c_value, near10$ratio_mc, near10$ratio_exact, near10$ratio_limit), collapse = "; ")`.
+The sample-mean standard error is as much as
+`r sprintf("%.1f", 100 * mean_error10)`% of the exact mean there, making
+the squared denominator noisy even with 5,000 paths.
+
+The crossing and averaging checks closely support the predicted
+tradeoff. Exact finite-$n$ full ratios approach positive limits, and
+the Monte Carlo check must be read with its uncertainty near $c=2$.
+This does not establish a vanishing ratio or a limiting selection-error
+probability. Like Analysis 09, results are cached as an RDS file;
+re-rendering draws the figures from numerical results, not saved images.
+Code or configuration changes invalidate the cache automatically.
