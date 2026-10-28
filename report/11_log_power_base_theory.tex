@@ -1,0 +1,487 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\title{Analysis 11: Log-Power Weights, Crossing Scale,\\
+and Concentration for Weighted Rolling Validation}
+\author{Aileen Tao}
+\date{}
+\begin{document}
+\maketitle
+
+\section{Setup}
+\[
+Y_i=\theta+\xi_i,\qquad \xi_i\stackrel{\mathrm{iid}}{\sim}N(0,1),
+\qquad 0<|\theta|<1.
+\]
+Here $Y_i$ is the observation at time $i$, $\theta$ is the unknown mean,
+and $\xi_i$ are independent standard Gaussian errors. For current
+training-sample size $n\in\{1,2,\ldots\}$, the training sample mean is
+\[
+\bar Y_n=\frac1n\sum_{j=1}^nY_j.
+\]
+Model 0 predicts $\bar Y_n$; Model 1 predicts zero. Both use squared loss.
+
+Write $R_k(n)$ for Model $k$'s expected squared prediction error on
+an independent new observation, and $\Delta_R(n)=R_0(n)-R_1(n)$
+for the population-risk difference. Then
+\[
+R_0(n)=1+\frac1n,\qquad R_1(n)=1+\theta^2,\qquad
+\Delta_R(n)=\frac1n-\theta^2.
+\]
+Define $n_{\rm pop}$ as the first training size with $\Delta_R(n)<0$:
+\[
+n_{\rm pop}=\lfloor\theta^{-2}\rfloor+1\sim\theta^{-2}\qquad(|\theta|\to0).
+\]
+\textbf{Proof.} See Appendix~\ref{app:population}.
+
+\section{Weighted rolling validation}
+Rolling validation (RV) predicts $Y_i$ from the first $i-1$
+observations. Let $w_i>0$ be the deterministic weight assigned to
+validation time $i$, whose training size is $i-1$; the weight sequence
+is independent of the data and $\theta$.
+Define the expected weighted-RV loss difference (Model 0 minus Model 1) by
+\[
+\Delta_{{\rm RV},w}(n)
+=\sum_{i=2}^{n+1}w_i\left(\frac1{i-1}-\theta^2\right).
+\]
+The quantity $r_n$ is the weighted average of the reciprocal training sizes:
+\[
+r_n=\frac{\sum_{i=2}^{n+1}w_i/(i-1)}{\sum_{i=2}^{n+1}w_i},
+\qquad
+\frac{\Delta_{{\rm RV},w}(n)}{\sum_{i=2}^{n+1}w_i}
+=r_n-\theta^2.
+\]
+Define $n_{{\rm RV},w}$ as the first training size with
+$r_n<\theta^2$, provided such an integer exists. Positivity of the
+weights gives
+\[
+r_n\ge\frac1n,\qquad n_{{\rm RV},w}\ge n_{\rm pop}.
+\]
+The crossing inequality holds whenever the weighted crossing exists.
+Also $r_n$ strictly decreases, so there is a unique first strict crossing
+and the inequality persists afterward.
+\textbf{Proof.} See Appendix~\ref{app:weighted}.
+
+\section{Log-power weights and crossing scale}
+Take
+\[
+w_i=[\log(i+1)]^p,\qquad p>0\ \text{fixed}.
+\]
+The exponent $p$ controls the increase in weight given to later
+validation times. As $n\to\infty$, integral comparison gives
+\[
+\sum_{i=2}^{n+1}w_i\sim n(\log n)^p,\qquad
+\sum_{i=2}^{n+1}\frac{w_i}{i-1}
+\sim\frac{(\log n)^{p+1}}{p+1}.
+\]
+Therefore,
+\[
+r_n\sim\frac{\log n}{(p+1)n}.
+\]
+\textbf{Proof.} See Appendix~\ref{app:sums}.
+
+\begin{theorem}[First strict log-power crossing]
+For fixed $p>0$, the expected weighted-RV crossing exists for every
+$0<|\theta|<1$, and as $|\theta|\to0$,
+\[
+n_{{\rm RV},w}\sim\frac{\theta^{-2}\log(\theta^{-2})}{p+1}
+=\frac{2\theta^{-2}}{p+1}\log(|\theta|^{-1}),
+\]
+\[
+\frac{n_{{\rm RV},w}}{n_{\rm pop}}
+\sim\frac{\log(\theta^{-2})}{p+1}
+=\frac{2}{p+1}\log(|\theta|^{-1}).
+\]
+\end{theorem}
+\noindent Log-power weighting delays the expected RV crossing by a
+logarithmic factor relative to the population crossing.
+\textbf{Proof.} See Appendix~\ref{app:crossing}.
+
+\section{Concentration on the log-weight crossing scale}
+Throughout this section, $p>0$ is fixed and $|\theta|\to0$. Suppose
+\begin{equation}\label{eq:scale}
+\frac{n}{n_{{\rm RV},w}}\to c,\qquad 0<c<\infty,
+\end{equation}
+where $n$ is the current training size, $n_{{\rm RV},w}$ is the
+expected weighted-RV crossing size, and $c$ is fixed.
+Using
+\[
+n_{{\rm RV},w}\sim\frac{\theta^{-2}\log(\theta^{-2})}{p+1},
+\]
+we obtain
+\[
+n\sim\frac{c}{p+1}\theta^{-2}\log(\theta^{-2}).
+\]
+Multiplying by $\theta^2$ gives
+\[
+n\theta^2\sim\frac{c}{p+1}\log(\theta^{-2}).
+\]
+Taking logarithms instead gives
+\[
+\log n=\log(\theta^{-2})+\log\log(\theta^{-2})+O(1)
+\sim\log(\theta^{-2}).
+\]
+The $\log\log(\theta^{-2})$ term is lower order.
+Here $c<1$ is before the expected crossing, $c=1$ is on the crossing
+scale, and $c>1$ is after the expected crossing.
+
+\subsection{Realized weighted-RV score}
+Define the realized weighted-RV loss difference
+\[
+\Xi_{n,w}=\sum_{i=2}^{n+1}w_i
+\left\{(Y_i-\bar Y_{i-1})^2-Y_i^2\right\}.
+\]
+Its sign determines the selected model: a negative value favors
+Model 0, a positive value favors Model 1, and zero is a tie.
+
+\subsection{Mean on the log-weight scale}
+The exact mean identity is
+\[
+\mathbb E\Xi_{n,w}
+=\Delta_{{\rm RV},w}(n)
+=\left(\sum_{i=2}^{n+1}w_i\right)(r_n-\theta^2).
+\]
+For log-power weights,
+\[
+\sum_{i=2}^{n+1}w_i\sim n(\log n)^p,\qquad
+r_n\sim\frac{\log n}{(p+1)n}.
+\]
+Thus the two contributions satisfy
+\[
+\left(\sum_{i=2}^{n+1}w_i\right)r_n
+\sim\frac{(\log n)^{p+1}}{p+1},
+\]
+\[
+\theta^2\sum_{i=2}^{n+1}w_i\sim n\theta^2(\log n)^p.
+\]
+Using the scaling relations established above, for fixed $c\ne1$,
+\[
+\mathbb E\Xi_{n,w}\sim
+\frac{1-c}{p+1}[\log(\theta^{-2})]^{p+1}.
+\]
+The mean is eventually positive for $c<1$ and negative for
+$c>1$; at $c=1$ the leading terms cancel.
+\textbf{Proof.} See Appendix~\ref{app:mean}.
+
+\subsection{Variance}
+Start from the centered realized score
+\[
+\Xi_{n,w}-\mathbb E\Xi_{n,w}.
+\]
+Expanding the squared-loss difference gives two uncorrelated random
+components: a quadratic Gaussian part and the linear Gaussian term
+\[
+-2\theta\sum_{i=2}^{n+1}w_i\xi_i.
+\]
+Because these components are uncorrelated,
+\[
+\operatorname{Var}(\Xi_{n,w})
+=\operatorname{Var}(\text{quadratic part})
++\operatorname{Var}\!\left(-2\theta\sum_{i=2}^{n+1}w_i\xi_i\right).
+\]
+The quadratic variance satisfies
+\[
+\operatorname{Var}(\text{quadratic part})\sim2(\log n)^{2p}.
+\]
+For the linear component, the square-weight asymptotic
+\[
+\sum_{i=2}^{n+1}w_i^2\sim n(\log n)^{2p}
+\]
+gives
+\[
+\operatorname{Var}\!\left(-2\theta\sum_{i=2}^{n+1}w_i\xi_i\right)
+=4\theta^2\sum_{i=2}^{n+1}w_i^2
+\sim4n\theta^2(\log n)^{2p}.
+\]
+Using the scaling relations established above puts both variances
+on the same scale:
+\[
+\operatorname{Var}(\text{linear part})
+\sim\frac{4c}{p+1}[\log(\theta^{-2})]^{2p+1},
+\]
+\[
+\operatorname{Var}(\text{quadratic part})
+\sim2[\log(\theta^{-2})]^{2p}.
+\]
+The linear variance is larger by one logarithmic factor, with power
+$2p+1$ rather than $2p$, so it dominates. Therefore,
+\[
+\operatorname{Var}(\Xi_{n,w})
+\sim\frac{4c}{p+1}[\log(\theta^{-2})]^{2p+1}.
+\]
+\textbf{Proof.} See Appendix~\ref{app:variance}.
+
+\section{Main concentration theorem}
+\begin{theorem}[Concentration away from the crossing boundary]
+For fixed $p>0$ and $c\in(0,\infty)\setminus\{1\}$,
+\[
+\frac{\operatorname{Var}(\Xi_{n,w})}{\{\mathbb E\Xi_{n,w}\}^2}
+\sim\frac{4c(p+1)}{(1-c)^2\log(\theta^{-2})}\to0.
+\]
+Thus weighted RV selects Model 1 with probability tending to one for
+$c<1$, and Model 0 with probability tending to one for $c>1$.
+At $c=1$, the leading mean vanishes.
+\end{theorem}
+\noindent\textbf{Proof.} See Appendix~\ref{app:ratio}.
+
+\appendix
+\setlength{\abovedisplayskip}{7pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{7pt plus 2pt minus 2pt}
+\section*{Appendix}
+\section{Population risk and weighted-RV formulas}
+\subsection{Population risk}\label{app:population}
+Let $Y_{\rm new}=\theta+\xi_{\rm new}$ be independent of the training
+sample, with $\xi_{\rm new}\sim N(0,1)$. Then
+$Y_{\rm new}-\bar Y_n=\xi_{\rm new}-n^{-1}\sum_{j=1}^n\xi_j$
+has mean zero and variance $1+1/n$, whereas
+$\mathbb EY_{\rm new}^2=1+\theta^2$. Subtracting the risks gives
+$\Delta_R(n)=1/n-\theta^2$, negative exactly when $n>\theta^{-2}$.
+The first such integer is $\lfloor\theta^{-2}\rfloor+1
+=\theta^{-2}+O(1)$; equality of risks is a tie.
+
+\subsection{Weighted expectation, monotonicity, and crossing}\label{app:weighted}
+Independence of $Y_i$ and its training sample gives
+\[
+\mathbb E\{(Y_i-\bar Y_{i-1})^2-Y_i^2\}
+=\frac1{i-1}-\theta^2.
+\]
+Linearity of expectation proves the stated weighted mean, without
+requiring independent validation losses. Dividing by positive total
+weight gives $r_n-\theta^2$. Each reciprocal is at least $1/n$,
+so $r_n\ge1/n$ and a strict weighted crossing cannot precede
+$n_{\rm pop}$. Moreover,
+\[
+r_{n+1}=
+\frac{(\sum_{i=2}^{n+1}w_i)r_n+w_{n+2}/(n+1)}
+{\sum_{i=2}^{n+1}w_i+w_{n+2}}<r_n,
+\]
+because $r_n\ge1/n>1/(n+1)$. Since $r_1=1>\theta^2$, if
+$r_n\to0$ there is a first strict crossing, and the inequality
+$r_n<\theta^2$ persists thereafter.
+
+\section{Log-power weight sums and crossing scale}
+\subsection{Weight-sum asymptotics}\label{app:sums}
+All limits in this subsection take $n\to\infty$ with fixed $p>0$.
+For fixed $0<\delta<1$, weights at $\delta n\le i\le n+1$ equal
+$(\log n)^p(1+o(1))$ uniformly. Bounding the full sum above by
+$n[\log(n+2)]^p$ and below by this last fraction gives
+\[
+1-\delta\le\liminf_{n\to\infty}
+\frac{\sum_{i=2}^{n+1}w_i}{n(\log n)^p}
+\le\limsup_{n\to\infty}
+\frac{\sum_{i=2}^{n+1}w_i}{n(\log n)^p}\le1.
+\]
+Let $\delta\downarrow0$. Replacing $p$ by $2p$ proves
+\[
+\sum_{i=2}^{n+1}w_i^2\sim n(\log n)^{2p}.
+\]
+With $m=i-1$, the reciprocal-weight
+summand is asymptotic to $(\log m)^p/m$. This comparison sum
+diverges and its summand is eventually decreasing. Thus
+\[
+\sum_{i=2}^{n+1}\frac{w_i}{i-1}
+\sim\sum_{m=2}^n\frac{(\log m)^p}{m}
+\sim\int_2^n\frac{(\log x)^p}{x}\,dx
+\sim\frac{(\log n)^{p+1}}{p+1}.
+\]
+Dividing the sums gives the formula for $r_n$, in particular $r_n\to0$.
+
+\subsection{First strict crossing}\label{app:crossing}
+Fix $0<\varepsilon<1$ and set
+\[
+n_-=\left\lfloor
+\frac{(1-\varepsilon)\theta^{-2}\log(\theta^{-2})}{p+1}
+\right\rfloor,\qquad
+n_+=\left\lceil
+\frac{(1+\varepsilon)\theta^{-2}\log(\theta^{-2})}{p+1}
+\right\rceil.
+\]
+Then
+\[
+\log n_\pm=\log(\theta^{-2})+\log\log(\theta^{-2})
+-\log(p+1)+\log(1\pm\varepsilon)+o(1),
+\]
+so $\log n_\pm/\log(\theta^{-2})\to1$ and
+\[
+\frac{r_{n_\pm}}{\theta^2}
+\sim\frac{\log n_\pm}{(p+1)n_\pm\theta^2}
+\longrightarrow\frac1{1\pm\varepsilon}.
+\]
+Since $r_n\to0$, Appendix~\ref{app:weighted} ensures existence for
+every admissible $\theta$. For sufficiently small $|\theta|$, the
+limits above and monotonicity give $n_-<n_{{\rm RV},w}\le n_+$.
+Rounding changes each endpoint by at most one. Divide by
+$\theta^{-2}\log(\theta^{-2})/(p+1)$ and let
+$\varepsilon\downarrow0$ to prove
+$n_{{\rm RV},w}\sim\theta^{-2}\log(\theta^{-2})/(p+1)$.
+The identity $\log(\theta^{-2})=2\log(|\theta|^{-1})$ and
+$n_{\rm pop}\sim\theta^{-2}$ give the crossing formulas.
+
+\section{Mean, variance, and concentration on the log-weight scale}
+\subsection{Mean}\label{app:mean}
+Appendix~\ref{app:sums} supplies deterministic remainders
+$o(\log n)$ and $o(n)$, depending only on $n$ and fixed $p$, such that
+\[
+\mathbb E\Xi_{n,w}
+=(\log n)^p\left\{\frac{\log n}{p+1}+o(\log n)
+-\theta^2[n+o(n)]\right\}.
+\]
+This proves the general expansion without a restriction on $n\theta^2$.
+Under~\eqref{eq:scale}, $n\sim
+c\theta^{-2}\log(\theta^{-2})/(p+1)\to\infty$, and
+\[
+n\theta^2\sim\frac{c}{p+1}\log(\theta^{-2}),\qquad
+\log n=\log(\theta^{-2})+\log\log(\theta^{-2})
++\log\frac{c}{p+1}+o(1).
+\]
+In particular $\log n\sim\log(\theta^{-2})$ and
+$n\theta^2=O(\log n)$, so $\theta^2o(n)=o(\log n)$. Hence
+\[
+\mathbb E\Xi_{n,w}
+=(\log n)^p\left\{\frac{\log n}{p+1}-n\theta^2\right\}
++o\bigl((\log n)^{p+1}\bigr).
+\]
+This additive expansion holds also at $c=1$. For
+$c\ne1$, its leading coefficient is nonzero, giving the
+mean equivalent in Section 4.2. At $c=1$ it proves only
+$\mathbb E\Xi_{n,w}=o([\log(\theta^{-2})]^{p+1})$.
+
+\subsection{Variance}\label{app:variance}
+In this proof write $S_m=\sum_{j=1}^m\xi_j$ and
+$f(x)=[\log(x+2)]^p$, so $w_{m+1}=f(m)$. Expanding one loss gives
+\[
+(Y_{m+1}-\bar Y_m)^2-Y_{m+1}^2
+=\frac{S_m^2}{m^2}-\frac{2\xi_{m+1}S_m}{m}
+-2\theta\xi_{m+1}-\theta^2.
+\]
+Let $Q_{n,w}$ denote the centered quadratic Gaussian part of the score.
+The centered score is $Q_{n,w}$ plus
+$-2\theta\sum_{i=2}^{n+1}w_i\xi_i$, where
+\[
+Q_{n,w}=\sum_{m=1}^nf(m)
+\left\{\frac{S_m^2-m}{m^2}-\frac{2\xi_{m+1}S_m}{m}\right\}.
+\]
+Each centered quadratic monomial has zero covariance with each
+$\xi_i$: Gaussian third moments vanish and independent centered
+factors have zero expectation. Thus the quadratic and linear terms
+are uncorrelated. Collect the centered-square and pair-product
+coefficients as
+\[
+a_t=\sum_{m=t}^n\frac{f(m)}{m^2}\quad(1\le t\le n),\qquad
+b_l=\sum_{m=l}^n\frac{f(m)}{m^2}-\frac{f(l-1)}{l-1}
+\quad(2\le l\le n+1),
+\]
+with an empty sum equal to zero. Then
+\[
+Q_{n,w}=\sum_{t=1}^na_t(\xi_t^2-1)
++2\sum_{l=2}^{n+1}b_l\sum_{t=1}^{l-1}\xi_t\xi_l.
+\]
+Distinct monomials in this expression are uncorrelated; centered
+squares have variance $2$ and pair products have variance $1$.
+Consequently,
+\begin{equation}\label{eq:exactvar}
+\operatorname{Var}(\Xi_{n,w})
+=2\sum_{t=1}^na_t^2+4\sum_{l=2}^{n+1}(l-1)b_l^2
++4\theta^2\sum_{i=2}^{n+1}w_i^2.
+\end{equation}
+
+We now estimate the quadratic part as $n\to\infty$ with fixed $p>0$.
+Integral comparison gives
+$a_t\le C f(t)/t$ for a constant $C$ depending only on $p$, hence
+$\sum_ta_t^2=O(1)$ since $\sum_tf(t)^2/t^2<\infty$.
+Define the tail and residual coefficients
+\[
+T_n=\sum_{m=n+1}^{\infty}\frac{f(m)}{m^2},\qquad
+B_l=\sum_{m=l}^{\infty}\frac{f(m)}{m^2}-\frac{f(l-1)}{l-1}.
+\]
+Integral comparison and integration by parts yield
+\[
+T_n\sim\frac{f(n)}n,\qquad
+|B_l|\le C\left\{\frac{(\log l)^{p-1}}l
++\frac{(\log l)^p}{l^2}\right\}\quad(l\ge3).
+\]
+Indeed, the sum--integral error is $O(f(l)/l^2)$, and
+\[
+\int_l^\infty\frac{f(x)}{x^2}\,dx
+=\frac{f(l)}l+\int_l^\infty\frac{f'(x)}x\,dx,\qquad
+\int_l^\infty\frac{f'(x)}x\,dx
+=O\!\left(\frac{(\log l)^{p-1}}l\right).
+\]
+For completeness, $f'(x)/x=O((\log x)^{p-1}/x^2)$, and for any
+fixed real $q$,
+\[
+\int_l^\infty\frac{(\log x)^q}{x^2}\,dx
+=\frac{(\log l)^q}{l}
+\int_0^\infty e^{-v}\left(1+\frac v{\log l}\right)^q\,dv
+\sim\frac{(\log l)^q}{l}.
+\]
+Dominated convergence applies: for $q\le0$ the factor is at most
+$1$, and for $q>0$ it is bounded by $(1+v)^q$ when $\log l\ge1$.
+Taking $q=p-1$ proves the derivative bound. It also gives
+$\int_l^\infty f(x)/x^2\,dx=f(l)/l\{1+O(1/\log l)\}$,
+which proves the tail and $a_t$ estimates. The sum--integral bound
+applies for large $l$ because $f(x)/x^2$ is eventually decreasing.
+The shift from $f(l)/l$ to
+$f(l-1)/(l-1)$ is $O(f(l)/l^2)$.
+Thus, writing $D_n=\sum_{l=2}^n(l-1)B_l^2$,
+\[
+D_n=\begin{cases}
+O(1),&0<p<1/2,\\
+O(\log\log n),&p=1/2,\\
+O((\log n)^{2p-1}),&p>1/2,
+\end{cases}
+\qquad D_n=o(f(n)^2).
+\]
+These bounds follow by integrating $(\log x)^{2p-2}/x$.
+For $l\le n$, $b_l=B_l-T_n$, whereas $b_{n+1}=-f(n)/n$.
+Cauchy--Schwarz now gives
+\[
+\begin{split}
+\sum_{l=2}^n(l-1)b_l^2
+&=T_n^2\frac{n(n-1)}2
++O\!\left(D_n+T_n n\sqrt{D_n}\right)\\
+&\sim\frac{f(n)^2}2.
+\end{split}
+\]
+The endpoint contributes $n b_{n+1}^2=f(n)^2/n=o(f(n)^2)$.
+Since $f(n)\to\infty$, the bounded $a_t$ contribution is also
+negligible. Therefore
+\[
+\operatorname{Var}(Q_{n,w})\sim2f(n)^2\sim2(\log n)^{2p}.
+\]
+Finally, Appendix~\ref{app:sums} gives
+$\sum_iw_i^2\sim n(\log n)^{2p}$. On scale~\eqref{eq:scale},
+$n\theta^2\to\infty$, so the linear term in~\eqref{eq:exactvar}
+dominates the quadratic term. Substituting the limits from
+Appendix~\ref{app:mean} proves the full variance equivalent in Section 4,
+also for $c=1$.
+
+\subsection{Ratio and selection}\label{app:ratio}
+For $c\ne1$, the mean is eventually nonzero. Dividing the
+variance equivalent by the squared mean equivalent gives
+\[
+\frac{\operatorname{Var}(\Xi_{n,w})}{\{\mathbb E\Xi_{n,w}\}^2}
+\sim
+\frac{\frac{4c}{p+1}[\log(\theta^{-2})]^{2p+1}}
+{\frac{(1-c)^2}{(p+1)^2}[\log(\theta^{-2})]^{2p+2}}
+=\frac{4c(p+1)}{(1-c)^2\log(\theta^{-2})}\to0.
+\]
+Writing $\mu=\mathbb E\Xi_{n,w}\ne0$ in this proof, a wrong sign or
+tie implies $|\Xi_{n,w}-\mu|\ge|\mu|$. Therefore
+\[
+\begin{cases}
+\Pr(\Xi_{n,w}\le0),&\mu>0,\\
+\Pr(\Xi_{n,w}\ge0),&\mu<0
+\end{cases}
+\ \le\Pr\{|\Xi_{n,w}-\mu|\ge|\mu|\}
+\le\frac{\operatorname{Var}(\Xi_{n,w})}{\mu^2}\to0.
+\]
+The sign of the mean from Appendix~\ref{app:mean} then shows that weighted
+RV selects Model 1 with probability tending to one for $c<1$,
+and Model 0 for $c>1$. At $c=1$, only
+$\mathbb E\Xi_{n,w}=o([\log(\theta^{-2})]^{p+1})$ follows;
+no ratio limit is asserted there.
+\end{document}
